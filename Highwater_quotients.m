@@ -3,7 +3,7 @@
 Highwater algebra quotients
 
 */
-import "Utilities for algebra creation.m": QQ, MakeSymmetric;
+import "Utilities_for_algebra_creation.m": QQ, MakeSymmetric;
 // --------------------------------------------
 //
 //          Highwater quotients

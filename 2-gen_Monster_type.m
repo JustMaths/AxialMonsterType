@@ -11,7 +11,7 @@ J. McInroy, S. Shpectorov, From forbidden configurations to a classification of 
 rather than Yabe's notation.  We will also use bases from the above poaper, rather than bases given by Yabe for several of the algebras.
 
 */
-import "Utilities for algebra creation.m": QQ, MakeSymmetric;
+import "Utilities_for_algebra_creation.m": QQ, MakeSymmetric;
 // --------------------------------------------
 //
 //          Algebras on X_3 axet

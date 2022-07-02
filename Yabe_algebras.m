@@ -3,7 +3,7 @@
 Yabe's algebras in his own basis
 
 */
-import "Utilities for algebra creation.m": QQ, MakeSymmetric;
+import "Utilities_for_algebra_creation.m": QQ, MakeSymmetric;
 // NB We use al, bt for the eigenvalues
 
 

@@ -219,7 +219,7 @@ intrinsic M4Y_bt(:base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   G := sub<Sym(5) | (2,4), (1,3), (1,2)(3,4)>;
   
   V := VectorSpace(F, 5);
-  S := [<1,1,V.1>, <1,2, bt/2*V![1,1,-1,-1,8*bt]>, <1,3, (1-4*bt)/2*(V.1+V.3)+4*bt(4*bt-1)*V.5>,
+  S := [<1,1,V.1>, <1,2, bt/2*V![1,1,-1,-1,8*bt]>, <1,3, (1-4*bt)/2*(V.1+V.3)+4*bt*(4*bt-1)*V.5>,
         <1,5, bt*V.1-bt*V.3+8*bt^2*V.5>, <5,5, V.5>];
   
   S := [<1,1,V.1>, <1,2, bt/2*V![1,1,-1,-1,2]>, <1,3, (1-4*bt)/2*(V.1+V.3)+(4*bt-1)*V.5>,
@@ -335,7 +335,14 @@ intrinsic M5A(al::RngElt) -> AlgGen, SetIndx, AlgMatElt
   }
   F := FieldOfFractions(Parent(al));
   require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
-  require F!al notin { F | 1,0,-1/3,1/5}: "The value of beta cannot be 1, 0, -1/3, or 1/5.";
+  if Characteristic(F) notin {3,5} then
+    require F!al notin { F | 1,0,-1/3,1/5}: "The value of beta cannot be 1, 0, -1/3, or 1/5.";
+  elif Characteristic(F) eq 3 then
+    require F!al notin { F | 1,0,1/5}: "The value of beta cannot be 1, 0, -1/3, or 1/5.";
+  elif Characteristic(F) eq 5 then
+    require F!al notin { F | 1,0,-1/3}: "The value of beta cannot be 1, 0, -1/3, or 1/5.";
+  end if;
+
   
   A, gens, frob := M5A(:base_field:=F);
   

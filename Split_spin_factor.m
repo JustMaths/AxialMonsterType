@@ -47,7 +47,7 @@ intrinsic SplitSpinFactor(b::Mtrx, al::RngElt) -> AlgGen, AlgMatElt
   F := FieldOfFractions(Parent(al));
   require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
   // Should check that the field for b and F are compatible.
-  require F!al notin { F | 1,0 1/2}: "The value of eta cannot be 1, 0, or 1/2.";
+  require F!al notin { F | 1,0, 1/2}: "The value of eta cannot be 1, 0, or 1/2.";
 
   A, gens, frob := SplitSpinFactor(b);
   
@@ -59,7 +59,7 @@ end intrinsic;
 
 intrinsic SplitSpinFactorCover(b::Mtrx) -> AlgGen, AlgMatElt
   {
-  Returns the cover of the exceptional split spin factor \widehat{S}(b, -1)^\circ and its Frobenius form.
+  Returns the cover of the exceptional split spin factor \\widehat\{S\}(b, -1)^\\circ and its Frobenius form.
   }
   require NumberOfRows(b) eq NumberOfColumns(b): "The matrix given must be square";
   

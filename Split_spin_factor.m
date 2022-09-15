@@ -44,12 +44,13 @@ intrinsic SplitSpinFactor(b::Mtrx, al::RngElt) -> AlgGen, AlgMatElt
   {
   Returns the split spin factor algebra S(b, al) and its Frobenius form.
   }
+  // Need to fix to take covering ring of al and b
   F := FieldOfFractions(Parent(al));
   require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
   // Should check that the field for b and F are compatible.
   require F!al notin { F | 1,0, 1/2}: "The value of eta cannot be 1, 0, or 1/2.";
 
-  A, gens, frob := SplitSpinFactor(b);
+  A, frob := SplitSpinFactor(b);
   
   FF<x> := BaseRing(A);
   phi := hom<FF->F | [al]>;

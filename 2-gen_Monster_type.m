@@ -440,11 +440,21 @@ intrinsic M6J(:base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   return A, {@ A.1, A.2 @}, frob;
 end intrinsic;
 
-intrinsic M6J(al::RatFldElt) -> AlgGen, AlgMatElt
+intrinsic M6J(al::RngElt) -> AlgGen, AlgMatElt
   {
   The 6J algebra for al, with generators and its Frobenius form.
   }
+  F := FieldOfFractions(Parent(al));
+  require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
+  require F!al notin { F | 1, 0, 2}: "The value of alpha cannot be 1, 0, or 2.";
+    
+  A, gens, frob := M6J(:base_field:=F);
   
+  FF<x> := BaseRing(A);
+  phi := hom<FF->F | [al]>;
+  
+  A := ChangeRing(A, F, phi);
+  return A, {@ A.1, A.2 @}, ChangeRing(frob, F, phi);
 end intrinsic;
 
 // We use the basis given by a_0, a_2, a_4, d, z as in the Forbidden paper.

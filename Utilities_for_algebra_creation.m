@@ -3,6 +3,7 @@
 Some utilities for helping to build algebra structure constants and bilinear forms
 
 */
+ZZ := Integers();
 QQ := Rationals();
 /*
 

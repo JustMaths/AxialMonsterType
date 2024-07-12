@@ -140,7 +140,7 @@ intrinsic SpinFactorException(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   G := sub<Sym(2) | (1,2)>;
   
   V := VectorSpace(F, 2);
-  S := [<1,1,V.1>, <1,2,1/2(V.1+V.2)>];
+  S := [<1,1,V.1>, <1,2,1/2*(V.1+V.2)>];
   
   mult := BuildSymmetricMultiplication(S, G);
   A := Algebra<F, 2 | mult>;

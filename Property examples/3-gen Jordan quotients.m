@@ -4,7 +4,6 @@ Code to check which 3-generated Jordan type 1/2 shapes complete when using the q
 
 */
 AttachSpec("2-gen Monster.spec");
-AttachSpec("../AxialTools/AxialTools.spec");
 Attach("3-gen Jordan type.m");
 
 AA, _, frobAA := GS();

@@ -19,7 +19,7 @@ intrinsic GS(: base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   al = \phi_a(b), bt = \phi_b(c), gm = \phi_c(a), psi = \phi_a(bc)
   }
   require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
-  F<al,bt, gm, psi> := FunctionField(base_ring, 4);
+  F<al, bt, gm, psi> := FunctionField(base_ring, 4);
   
   // The group acts semi-linearly on the algebra
   G := sub<Sym(9) | (2,3)(4,5)(8,9), (1,3)(4,6)(7,9)>;

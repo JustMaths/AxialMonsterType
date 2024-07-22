@@ -11,7 +11,7 @@ QQ := Rationals();
 // ------------------------------------
 intrinsic M3C(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  The Matsuo algebra 3C(eta) over a function field, with generators and its Frobenius form.  Optional paramenter base_field of the base field.
+  The Matsuo algebra 3C(eta) over a function field, with generators and its Frobenius form.  Optional paramenter base_field of the base field; default is the rationals.
   }
   F<eta> := FunctionField(base_field);
 
@@ -48,7 +48,7 @@ end intrinsic;
 
 intrinsic M3Cx(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  The Matsuo algebra 3Cx(-1), with generators and its Frobenius form.  Optional paramenter base_field of the base field.
+  The Matsuo algebra 3Cx(-1), with generators and its Frobenius form.  Optional paramenter base_field of the base field; default is the rationals.
   }
   F := base_field;
   require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
@@ -75,7 +75,7 @@ end intrinsic;
 // This was called Cl^J(F^2, b_\dl) in Hall, Rehren, Shpectorov
 intrinsic SpinFactor(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  The spin factor algebra S(delta) over a function field, with generators and its Frobenius form.  Optional paramenter base_field of the base field.
+  The spin factor algebra S(delta) over a function field, with generators and its Frobenius form.  Optional paramenter base_field of the base field; default is the rationals.
   }
   require Characteristic(base_field) ne 2: "The characteristic of the field cannot be 2.";
   F<dl> := FunctionField(base_field);
@@ -132,7 +132,7 @@ end intrinsic;
 // The subalgebra S(2)^\circ.  This is Cl^0(F^2, b_2) in Hall, Rahren, Shpectorov.
 intrinsic SpinFactorException(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  The spin factor subalgebra S(2)^\circ, with generators and its Frobenius form.  Optional paramenter base_field of the base field.
+  The spin factor subalgebra S(2)^\circ, with generators and its Frobenius form.  Optional paramenter base_field of the base field; default is the rationals.
   }
   require Characteristic(base_field) ne 2: "The characteristic of the field cannot be 2.";
   F := base_field;
@@ -162,7 +162,7 @@ end intrinsic;
 // The cover \widehat{S}(2)^\circ.  This is Cl^00(F^2, b_2) in Hall, Rahren, Shpectorov.
 intrinsic SpinFactorCover(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  The spin factor cover \widehat S (2)^\circ, with generators and its Frobenius form.  Optional paramenter base_field of the base field.
+  The spin factor cover \widehat S (2)^\circ, with generators and its Frobenius form.  Optional paramenter base_field of the base field; default is the rationals.
   }
   require Characteristic(base_field) ne 2: "The characteristic of the field cannot be 2.";
   F := base_field;
@@ -187,4 +187,26 @@ intrinsic hatS2circ(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   }
   A, gens, frob := SpinFactorCover(:base_field := base_field);
   return A, gens, frob;
+end intrinsic;
+
+intrinsic JordanUniversal(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
+  {
+  Returns the universal 2-generated axial algebra of Jordan type J_\eta(\phi).  Optional paramenter base_field of the base field; default is the rationals.
+  }
+  require Characteristic(base_field) ne 2: "The characteristic of the field cannot be 2.";
+  F<eta, phi> := FunctionField(base_field, 2);
+  pi := (1-eta)*phi - eta;
+
+  G := sub<Sym(3) | (1,2)>;
+  
+  V := VectorSpace(F, 3);
+  S := [<1,1,V.1>, <1,2,eta*(V.1+V.2)+V.3>, <1,3,pi*V.1>, <3,3,pi*V.3>];
+  
+  mult := BuildSymmetricMultiplication(S, G);
+  A := Algebra<F, 3 | mult>;
+  
+  T := [ <1,1,F!1>, <1,2,phi>, <1,3,pi>, <3,3,pi*(phi-2*eta)>];
+  frob := BuildSymmetricBilinearForm(T, G);
+
+  return A, {@ A.1, A.2 @}, frob;
 end intrinsic;

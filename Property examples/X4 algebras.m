@@ -43,9 +43,12 @@ assert id eq B![0,0,4/(bt-1/2)];
 assert B.1*B.2-(B.1+B.2)/2 eq (bt-1/2)*id;
 // so x,y generate S(dl) where dl = 8(bt-1/2) + 2
 
+// Now check for ideals
+
 assert frob[1,2] eq bt;
-// So the projection graph always has an edge between a_1 and a_2
+// So the projection graph always has an edge between a_0 and a_1
 // The projection graph is a square
+// So no ideals containing axes
 
 assert Determinant(frob) eq -1/8*bt*(2*bt-1)^3;
 // Since bt can't be 0, we just need to check bt = 1/2
@@ -53,8 +56,11 @@ assert Determinant(frob) eq -1/8*bt*(2*bt-1)^3;
 
 A, gen, frob := M4A(1/2);
 
+
+
+
 // Check double axes
-x := A.1+A.2;
+x := A.1+A.3;
 y := A.2+A.4;
 // They have Jordan type 1/2, but have a 3-dim 1-space
 
@@ -68,15 +74,20 @@ assert not so;
 
 // The radical is 2-dimensional
 assert Dimension(NullSpace(frob)) eq 2;
-R := ideal<A| [Eltseq(x) : x in Basis(Nullspace(frob))]>;
+R := ideal<A| [A!x : x in Basis(Nullspace(frob))]>;
 u := A.1-A.2+A.3-A.4;
 assert u in R and A.5 in R;
 
 // The quotient is S(0)
 B, quo := quo<A|R>;
+assert sub<B|B.1,B.2> eq B;  // so B is 2-generated
 B.1 eq A.1@quo;
 B.2 eq A.2@quo;
-// write some code here to confirm the fusion law
+
+assert HasJordanFusionLaw(B.1: fusion_value:=1/2);
+assert HasJordanFusionLaw(B.2: fusion_value:=1/2);
+// So it is a 2-generated algebra of Jordan type 1/2
+
 so, id := HasOne(B);
 assert so;
 assert B.1*B.2-(B.1+B.2)/2 eq -id/4;
@@ -153,12 +164,12 @@ so, id := HasOne(B);
 
 // ============
 //
-// 4J(al, al/2)
+// 4J(2bt, bt)
 //
 // ============
 A, gen, frob := M4J();
 
-F<al> := BaseRing(A);
+F<bt> := BaseRing(A);
 
 // <<a_0, a_2 >> = 2B
 assert A.1*A.3 eq 0;
@@ -166,23 +177,26 @@ assert A.1*A.3 eq 0;
 // Check double axes
 x := A.1+A.3;
 y := A.2+A.4;
-// They have Monster type (2al, al)
-// NB need al ne 1/2
+assert HasMonsterFusionLaw(x: fusion_values := {@ 4*bt, 2*bt@});
+assert HasMonsterFusionLaw(x: fusion_values := {@ 4*bt, 2*bt@});
+// They have Monster type (4bt, 2bt)
+// NB need bt ne 1/4
 
 B, inc := sub<A|x,y>;
 assert Dimension(B) eq 3;
-c := B.1+B.2 - 1/al*B.1*B.2;
+c := B.1+B.2 - 1/(2*bt)*B.1*B.2;
 assert c^2 eq c;
-// So B is a 3C(2al)
+// So B is a 3C(4bt)
 
-assert frob[1,2] eq al/2;
+
+assert frob[1,2] eq bt;
 // So the projection graph always has an edge between a_1 and a_2
 // The projection graph is a square
 
-assert Determinant(frob) eq 2*(al-1)^2*(2*al+1);
-// Since al \neq 1, just need to check al = -1/2
+assert Determinant(frob) eq 2*(2*bt-1)^2*(4*bt+1);
+// Since bt \neq 1/2, just need to check bt = -1/4
 
-A, gen, frob := M4J(-1/2);
+A, gen, frob := M4J(-1/4);
 
 R := NullSpace(frob);
 assert Dimension(R) eq 1;
@@ -190,12 +204,17 @@ assert Dimension(R) eq 1;
 // It is 4J(-1/2, -1/4)^x
 B, quo := quo<A|R.1>;
 
-// Check double axes for al = 1/2
-A, gen, frob := M4J(1/2);
+
+// Check double axes for bt = 1/4
+A, gen, frob := M4J(1/4);
 // Check double axes
 x := A.1+A.3;
 y := A.2+A.4;
+assert HasJordanFusionLaw(x: fusion_value := 1/2);
+assert HasJordanFusionLaw(y: fusion_value := 1/2);
 // They are Jordan 1/2 axes with a 3-dim 1-space
+assert Dimension(Eigenspace(x,1)) eq 3;
+assert Dimension(Eigenspace(y,1)) eq 3;
 
 B, inc := sub<A|x,y>;
 assert Dimension(B) eq 3;
@@ -235,7 +254,7 @@ assert frob[1,3] eq (4*bt-1)^2;
 
 assert Determinant(frob) eq 2^8*bt^2*(2*bt-1)^6;
 
-// Since bt \neq 0, 1, there are no quotients
+// Since bt \neq 0, 1/2, there are no quotients
 
 // ============
 //
@@ -393,7 +412,7 @@ assert det eq -(al-2)^3*(al+1)^3;
 //
 // ==============
 A := M4A(1/8);
-B := M4J(1/4);
+B := M4J(1/8);
 
 // Need to get the right basis
 z := B.1*B.2 - 3/16*(B.1+B.2) - 1/16*(B.3+B.4);

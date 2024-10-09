@@ -6,10 +6,6 @@ Yabe's algebras in his own basis
 import "Utilities_for_algebra_creation.m": QQ, MakeSymmetric;
 // NB We use al, bt for the eigenvalues
 
-
-
-
-
 // --------------------------
 //
 // The III algebra
@@ -21,7 +17,7 @@ intrinsic III(:base_ring:=QQ) -> AlgGen, SetIndx, AlgMatElt
   Yabe's III(al, bt, mu) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
   }
   require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
-  F<al, bt, mu> := FunctionField(base_ring, 2);
+  F<al, bt, mu> := FunctionField(base_ring, 3);
   
   pi_fact := (al+1)*(al-bt)*mu +(3*al^2+3*al*bt-bt-1);
   pi := -al*pi_fact/(4*(2*al-1));
@@ -49,6 +45,28 @@ intrinsic III(:base_ring:=QQ) -> AlgGen, SetIndx, AlgMatElt
   frob := Matrix([[1, proj1, proj1, pi], [proj1, 1, proj2, pi], [proj1, proj2, 1, pi], [pi, pi, pi, pi*(pi/al -((al-bt)*(mu+3)+2*bt-1)/4)]]);
   
   A := Algebra<F,4 | mult>;
+  
+  return A, {@ A.1, A.2 @}, frob;
+end intrinsic;
+
+intrinsic IV1(:base_ring:=QQ) -> AlgGen, SetIndx, AlgMatElt
+  {
+  Yabe's IV_1(al, bt) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
+  }
+  require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
+  F<al, bt> := FunctionField(base_ring, 2);
+  
+  G := sub<Sym(5) | (2,4), (1,3), (1,2)(3,4)>;
+  
+  V := VectorSpace(F, 5);
+  S := [<1,1,V.1>, <1,2,(al-bt)/2*(V.1+V.2+V.3+V.4) + bt*(V.1+V.2) + V.5>,
+        <1,3,V!0>, <1,5,(-2*al*bt-al+bt)/2*V.1>, <5,5,(-2*al*bt-al+bt)/2*V.5>];
+  
+  mult := BuildSymmetricMultiplication(S, G);
+  A := Algebra<F, 5 | mult>;
+  
+  T := [ <1,1,F!1>, <1,2,bt>, <1,3,F!0>, <1,5,(-2*al*bt-al+bt)/2>, <5,5,(bt-2*al)*(-2*al*bt-al+bt)/2>];
+  frob := BuildSymmetricBilinearForm(T, G);
   
   return A, {@ A.1, A.2 @}, frob;
 end intrinsic;

@@ -159,17 +159,16 @@ intrinsic M4B(al::RngElt) -> AlgGen, SetIndx, AlgMatElt
   return A, {@ A.1, A.2 @}, ChangeRing(frob, F, phi);
 end intrinsic;
 
-// Yabe IV_1(al, al/2)
+// Yabe IV_1(2bt, bt)
 // Joshi's double Matsuo algebra Table 7 (p4226) in paper with Galt, Joshi, Mamontov, Shpectorov, Staroletov
 // We use Joshi's basis, but reordered d1, d3, d2, d4, w
 // <a_0, a_2> \cong <a_1, a_3> \cong 2B
 intrinsic M4J(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  The 4J(al, al/2) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
+  The 4J(2bt, bt) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
   }
   require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
-  F<al> := FunctionField(base_ring);
-  bt := al/2;
+  F<bt> := FunctionField(base_ring);
   
   G := sub<Sym(5) | (2,4), (1,3), (1,2)(3,4)>;
   
@@ -180,24 +179,24 @@ intrinsic M4J(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   mult := BuildSymmetricMultiplication(S, G);
   A := Algebra<F, 5 | mult>;
   
-  T := [ <1,1,F!1>, <1,2,bt>, <1,3,0>, <1,5,al>, <5,5,2>];
+  T := [ <1,1,F!1>, <1,2,bt>, <1,3,0>, <1,5,2*bt>, <5,5,2>];
   frob := BuildSymmetricBilinearForm(T, G);
   
   return A, {@ A.1, A.2 @}, frob;
 end intrinsic;
 
-intrinsic M4J(al::RngElt) -> AlgGen, SetIndx, AlgMatElt
+intrinsic M4J(bt::RngElt) -> AlgGen, SetIndx, AlgMatElt
   {
-  The 4J(al, al/2) algebra, with generators and its Frobenius form.
+  The 4J(2bt, bt) algebra, with generators and its Frobenius form.
   }
-  F := FieldOfFractions(Parent(al));
+  F := FieldOfFractions(Parent(bt));
   require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
-  require F!al notin { F | 1, 0, 2}: "The value of alpha cannot be 1, 0, or 2.";
+  require F!bt notin { F | 1, 0, 1/2}: "The value of beta cannot be 1, 0, or 1/2.";
     
   A, gens, frob := M4J(:base_ring:=F);
   
   FF<x> := BaseRing(A);
-  phi := hom<FF->F | [al]>;
+  phi := hom<FF->F | [bt]>;
   
   A := ChangeRing(A, F, phi);
   return A, {@ A.1, A.2 @}, ChangeRing(frob, F, phi);
@@ -323,7 +322,7 @@ intrinsic M5A(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   mult := BuildSymmetricMultiplication(S, G);
   A := Algebra<F, 6 | mult>;
   
-  T := [ <1,1,F!1>, <1,2,3/4*bt>, <1,3,3/4*bt>, <1,6,-5/32*bt*(3*al+1)>, <6,6, 5/2^9*bt*(11*al+1)*(3*al+1)>];
+  T := [ <1,1,F!1>, <1,2,3/4*bt>, <1,3,3/4*bt>, <1,6,-5/4*bt*(al-bt)>, <6,6, 5/2^6*bt*(11*al+1)*(al-bt)>];
   frob := BuildSymmetricBilinearForm(T, G);
   
   return A, {@ A.1, A.2 @}, frob;
@@ -416,42 +415,41 @@ end intrinsic;
 
 intrinsic M6J(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  The 6J algebra over a function field with variable al, with generators and its Frobenius form.
+  The 6J(2bt, bt) algebra over a function field, with generators and its Frobenius form.
   }
   require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
-  F<al> := FunctionField(base_ring);
-  bt := al/2;
+  F<bt> := FunctionField(base_ring);
   
   G := sub<Sym(8) | (3,5)(2,6), (1,5)(2,4), (1,4)(2,5)(3,6)>;
   
   V := VectorSpace(F, 8);
   S := [<1,1,V.1>, <1,2,bt/2*(2*(V.1+V.2)-V.8)>, <1,3, bt/2*(V.1+V.3-V.5)>,
-        <1,4, al/2*(V.1+V.4-V.7)>, <1,7, al/2*(V.1+V.7-V.4)>,
-        <1,8, al/2*(2*V.1-V.6-V.2+V.8)>,
+        <1,4, bt*(V.1+V.4-V.7)>, <1,7, bt*(V.1+V.7-V.4)>,
+        <1,8, bt*(2*V.1-V.6-V.2+V.8)>,
         <7,7,V.7>, <7,8,bt*V.7>, <8,8, (bt+1)*V.8 -bt*V.7>];
   
   mult := BuildSymmetricMultiplication(S, G);
   A := Algebra<F, 8 | mult>;
   
-  T := [ <1,1,F!1>, <1,2,bt>, <1,3,bt/2>, <1,4,al/2>, <1,7,al/2>,
-         <1,8, al>, <7,7,F!1>, <7,8,bt>, <8,8, bt+2>];
+  T := [ <1,1,F!1>, <1,2,bt>, <1,3,bt/2>, <1,4,bt>, <1,7,bt>,
+         <1,8, 2*bt>, <7,7,F!1>, <7,8,bt>, <8,8, bt+2>];
   frob := BuildSymmetricBilinearForm(T, G);
     
   return A, {@ A.1, A.2 @}, frob;
 end intrinsic;
 
-intrinsic M6J(al::RngElt) -> AlgGen, AlgMatElt
+intrinsic M6J(bt::RngElt) -> AlgGen, AlgMatElt
   {
-  The 6J algebra for al, with generators and its Frobenius form.
+  The 6J(2bt, bt) algebra for bt, with generators and its Frobenius form.
   }
-  F := FieldOfFractions(Parent(al));
+  F := FieldOfFractions(Parent(bt));
   require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
-  require F!al notin { F | 1, 0, 2}: "The value of alpha cannot be 1, 0, or 2.";
+  require F!bt notin { F | 1, 0, 1/2}: "The value of beta cannot be 1, 0, or 1/2.";
     
   A, gens, frob := M6J(:base_ring:=F);
   
   FF<x> := BaseRing(A);
-  phi := hom<FF->F | [al]>;
+  phi := hom<FF->F | [bt]>;
   
   A := ChangeRing(A, F, phi);
   return A, {@ A.1, A.2 @}, ChangeRing(frob, F, phi);
@@ -511,7 +509,7 @@ intrinsic IY5(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   }
   require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
   F<al> := FunctionField(base_ring);
-  bt := 1/2;
+  bt := F!1/2;
   
   G := Sym(6)!!DihedralGroup(5);
   

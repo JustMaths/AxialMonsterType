@@ -507,25 +507,10 @@ intrinsic IY5(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
   
   }
-  require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
-  F<al> := FunctionField(base_ring);
-  bt := F!1/2;
   
-  G := Sym(6)!!DihedralGroup(5);
-  
-  V := VectorSpace(F,6);
-  S := [<1,1,Eltseq(V.1)>, <1,2,Eltseq(bt*(V.1+V.2)+V.6)>, <1,3,Eltseq(-bt/2*(&+[V.i : i in [1..5]]) + bt*(V.1+V.3)-V.6)>, <1,6,Eltseq(-(al-bt)*bt*V.1 + (al-bt)*bt/2*(V.2+V.5) +(al-bt)*V.6)>, <6,6,Eltseq(-(7*al-3)*(al-bt)*bt/2^5*(&+[V.i : i in [1..5]]) -5*(al-bt)*bt/2*V.6)>];
-  
-  mult := BuildSymmetricMultiplication(S, G);
-  A := Algebra<F, 6 | mult>;
-  
-  T := [ <1,1,F!1>, <1,2,3/4*bt>, <1,3,3/4*bt>, <1,6,-5/32*bt*(3*al+1)>, <6,6, 5/2^9*bt*(11*al+1)*(3*al+1)>];
-  frob := BuildSymmetricBilinearForm(T, G);
-  
-  return A, {@ A.1, A.2 @}, frob;
 end intrinsic;
 
-intrinsic IY5(al::RngFldElt) -> AlgGen, SetIndx, AlgMatElt
+intrinsic IY5(al::RngElt) -> AlgGen, SetIndx, AlgMatElt
   {
   }
 

@@ -21,12 +21,16 @@ function Mymod(x,d)
   xmodd := x mod d;
   return xmodd ne 0 select xmodd else d;
 end function;
-  
-intrinsic HighwaterQuotient(n::RngIntElt: field := QQ) -> AlgGen, SetIndx, AlgMatElt
+
+intrinsic HighwaterQuotient(n::RngIntElt: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  Returns the largest quotient of the highwater algebra (or its cover in charatceristic 5) on X(n) axet and its Frobenius form.
+  Returns the largest quotient of the highwater algebra on X(n) axet, its generators and its Frobenius form.
   }
-  require n in Integers() and n gt 0: "n must be a positive integer";
+  if Characteristic(base_ring) eq 5 and IsDivisibleBy(n,3) then
+    print "Warning: the Highwater algebra has a cover in characteristic 5.  If you want this instead, please use HighwaterCoverQuotient.\n";
+  end if;
+  
+  require n in Integers() and n ge 2: "n must be a positive integer greater than or equal to 2";
   // Get the full automorphism group
   if n in [1,2] then
     G := Sym(n);
@@ -34,130 +38,34 @@ intrinsic HighwaterQuotient(n::RngIntElt: field := QQ) -> AlgGen, SetIndx, AlgMa
     G := DihedralGroup(n); // G = D_2n, which in magma is n
   end if;
   
-  if Characteristic(field) eq 5 and IsDivisibleBy(n,3) then
-    sg_max := Floor(n/2);
-    // need to count the number of numbers which are 0 mod 3 less than sg_max
-    trips := sg_max div 3;
-    sg_num := sg_max + 2*trips;
-    
-    dim := n + sg_num;
-    
-    // S is a sequence [r,j]
-    function sg_name(S)
-      assert Type(S) eq SeqEnum and #S eq 2;
-      r,j := Explode(S);
-      
-      rbar := r mod 3;
-      
-      jmodn := j mod n;
-      if jmodn mod 3 ne 0 then
-        rbar := 0;
-      end if;
-      
-      if jmodn gt sg_max then
-        jmodn := n-jmodn;
-      end if;
-      
-      return [rbar, jmodn];
-    end function;
-    
-    // fix an ordering of the basis elements
-    names := [* i : i in [1..n] *] cat [* x : x in {@ sg_name([r,j]) : r in [0..2], j in [1..sg_max]@} *];
-    
-    // Need the correct action of the group
-    tau0 := Stabiliser(G,1).1;
-    
-    so, f := IsConjugate(G,1,2);
-    assert so;
-    if Order(f) ne 2 then
-      f := tau0*f;
-      assert Order(f) eq 2;
+  sg_num := Floor(n/2);
+  
+  dim := n + sg_num;
+  G := Sym(dim)!!G;
+  V := VectorSpace(base_ring, dim);
+  
+  // given x in Z, return image of sg_|x| in the quotient
+  function Sg(x)
+    xmodn := x mod n;
+    if xmodn eq 0 then
+      return Zero(V);
+    elif xmodn gt sg_num then
+      return V.(n+n-xmodn);
+    else
+      return V.(n+xmodn);
     end if;
-    
-    S3 := Sym(3);
-    sgact := hom<G->S3| [<tau0, S3!(2,3)>, <f,S3!(1,2)>]>;
-    
-    X := IndexedSet([1..dim]);
-    XxG := CartesianProduct(X, G);
-    act := map<XxG->X | x:-> x[1] le n select x[1]^x[2] else
-                Position(names, sg_name([(names[x[1],1]+1)^(x[2]@sgact)-1, names[x[1],2]]))>;
-    X := GSet(G, X, act);
-    G := ActionImage(G,X);
-    
-    V := VectorSpace(field, dim);
-    
-    // given a set S, return the sg element in V
-    function Sg(S)
-      SS := sg_name(S);
-      if SS[2] eq 0 then
-        return Zero(V);
-      else
-        pos := Position(names, SS);
-        assert pos ne 0; // equivalent to membership
-        return V.pos;
-      end if;
-    end function;
-    
-    function H2coeff(i,r)
-      imod := i mod 3;
-      rmod := r mod 3;
-      if imod eq rmod then
-        return 0;
-      else
-        c := (imod-rmod) mod 3;
-        return c eq 1 select -1 else c eq 2 select 1 else 0;
-      end if;
-    end function;
-    
-    function sgprod(S,T)
-      r,i := Explode(sg_name(S));
-      t,j := Explode(sg_name(T));
-      
-      if not ((i mod 3) eq 0 and (j mod 3) eq 0) then
-        return 2*(Sg([r,i]) + Sg([t,j])) -2*(&+[ Sg([k,i-j]) : k in [0..2]] + &+[ Sg([k,i+j]) : k in [0..2]]);
-      elif r eq t then
-        return 2*(Sg([r,i]) + Sg([t,j])) -(Sg([r,i-j]) + Sg([t,i+j]));
-      else
-        assert exists(q){ q : q in [0..2] | q notin {r,t}};
-        return 2*(Sg([r,i]) + Sg([t,i]) - Sg([q,i]) + Sg([r,j]) + Sg([t,j]) - Sg([q,j]))
-                -(Sg([r,i-j]) + Sg([t,i-j]) - Sg([q,i-j]) + Sg([r,i+j]) + Sg([t,i+j]) - Sg([q,i+j]));
-      end if;
-    end function;
-    
-    multbas := [<1,1,V.1>] cat [ <1,i,-2*(V.1+V.i) +Sg([i-1,i-1])> : i in [2..n]]
-         cat [<1,Position(names, S),-2*V.1 +(V.Mymod(1-j,n) + V.Mymod(1+j,n)) -Sg(S) -H2coeff(0,r)*(Sg([r-1,j]) - Sg([r+1,j]))>
-                    where r,j := Explode(S) : S in names[n+1..dim]]
-         cat [<Position(names,S), Position(names,T),sgprod(S, T)> : S, T in names[n+1..dim]];
-
-  else // In the Highwater algebra
-    sg_num := Floor(n/2);
-    
-    dim := n + sg_num;
-    G := Sym(dim)!!G;
-    V := VectorSpace(field, dim);
-    
-    // given x in Z, return image of sg_|x| in the quotient
-    function Sg(x)
-      xmodn := x mod n;
-      if xmodn eq 0 then
-        return Zero(V);
-      elif xmodn gt sg_num then
-        return V.(n+n-xmodn);
-      else
-        return V.(n+xmodn);
-      end if;
-    end function;
-    
-    multbas := [<1,1,V.1>] cat [ <1,i,1/2*(V.1+V.i) +Sg(i-1)> : i in [2..n]]
-         cat [<1,n+j,-3/4*V.1 +3/8*(V.Mymod(1-j,n) + V.Mymod(1+j,n)) + 3/2*Sg(n+j)> : j in [1..sg_num]]
-         cat [<n+i,n+j,3/4*(Sg(n+i)+Sg(n+j)) -3/8*(Sg(i-j)+Sg(i+j))> : i,j in [1..sg_num]];
-  end if;
+  end function;
+  
+  multbas := [<1,1,V.1>] cat [ <1,i,1/2*(V.1+V.i) +Sg(i-1)> : i in [2..n]]
+       cat [<1,n+j,-3/4*V.1 +3/8*(V.Mymod(1-j,n) + V.Mymod(1+j,n)) + 3/2*Sg(n+j)> : j in [1..sg_num]]
+       cat [<n+i,n+j,3/4*(Sg(n+i)+Sg(n+j)) -3/8*(Sg(i-j)+Sg(i+j))> : i,j in [1..sg_num]];
   
   mult := BuildSymmetricMultiplication(multbas, G);
-  
-  frob := DiagonalJoin(AllOnesMatrix(field,n,n), ZeroMatrix(field,sg_num,sg_num));
-  
-  return Algebra<field, dim | mult>, frob;
+  A := Algebra<base_ring, dim | mult>;
+    
+  frob := DiagonalJoin(AllOnesMatrix(base_ring,n,n), ZeroMatrix(base_ring,sg_num,sg_num));  
+
+  return A, {@ A.1, A.2 @}, frob;
 end intrinsic;
 
 intrinsic HighwaterQuotient(S::SeqEnum) -> AlgGen, AlgMatElt
@@ -269,11 +177,18 @@ intrinsic HighwaterQuotient(S::SeqEnum) -> AlgGen, AlgMatElt
   return Algebra<F, dim | mult>, frob;
 end intrinsic;
 
-intrinsic HighwaterCoverQuotient(n::RngIntElt: field := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic HighwaterCoverQuotient(n::RngIntElt: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
   Returns the largest quotient of the cover of the highwater algebra on the X(n) axet and its Frobenius form.
   }
-  require n in Integers() and n gt 0: "n must be a positive integer";
+  require n in Integers() and n ge 2: "n must be a positive integer greater than or equal to 2";
+  
+  // If n is not divisible by 3, then J is in I_n
+  if not IsDivisibleBy(n,3) then
+    A, gens, frob := HighwaterQuotient(n: base_ring:=base_ring);
+    return A, gens, frob;
+  end if;
+  
   // Get the full automorphism group
   if n in [1,2] then
     G := Sym(n);
@@ -281,6 +196,7 @@ intrinsic HighwaterCoverQuotient(n::RngIntElt: field := QQ) -> AlgGen, SetIndx, 
     G := DihedralGroup(n); // G = D_2n, which in magma is n
   end if;
   
+  // Now can assume that 3|n
   sg_max := Floor(n/2);
   // need to count the number of numbers which are 0 mod 3 less than sg_max
   trips := sg_max div 3;
@@ -330,7 +246,7 @@ intrinsic HighwaterCoverQuotient(n::RngIntElt: field := QQ) -> AlgGen, SetIndx, 
   X := GSet(G, X, act);
   G := ActionImage(G,X);
   
-  V := VectorSpace(field, dim);
+  V := VectorSpace(base_ring, dim);
   
   // given a set S, return the sg element in V
   function Sg(S)
@@ -339,7 +255,6 @@ intrinsic HighwaterCoverQuotient(n::RngIntElt: field := QQ) -> AlgGen, SetIndx, 
       return Zero(V);
     else
       pos := Position(names, SS);
-      // ERROR here with the assert if n=4.
       assert pos ne 0; // equivalent to membership
       return V.pos;
     end if;
@@ -375,13 +290,14 @@ intrinsic HighwaterCoverQuotient(n::RngIntElt: field := QQ) -> AlgGen, SetIndx, 
        cat [<Position(names,S), Position(names,T),sgprod(S, T)> : S, T in names[n+1..dim]];
   
   mult := BuildSymmetricMultiplication(multbas, G);
+  A := Algebra<base_ring, dim | mult>;
   
-  frob := DiagonalJoin(AllOnesMatrix(field,n,n), ZeroMatrix(field,sg_num,sg_num));
+  frob := DiagonalJoin(AllOnesMatrix(base_ring,n,n), ZeroMatrix(base_ring,sg_num,sg_num));
   
-  return Algebra<field, dim | mult>, frob;
+  return A, {@ A.1, A.2 @}, frob;
 end intrinsic;
 
-intrinsic HighwaterCoverQuotient(L::SeqEnum) -> AlgGen, SetIndx, AlgMatElt
+intrinsic HighwaterCoverQuotient(L::SeqEnum) -> AlgGen, AlgMatElt
   {
   Returns the quotient of the cover of the Highwater algebra by the ideal generated by al_1 a_1 + ... + al_n a_n, where L = [al_1, ..., al_n], and its Frobenius form.
   }

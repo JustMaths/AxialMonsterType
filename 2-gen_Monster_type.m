@@ -8,7 +8,7 @@ We will use the notation for the algebras coming from
 
 J. McInroy, S. Shpectorov, From forbidden configurations to a classification of some axial algebras of Monster type, arXiv:2107.07415, 41 pages, Jul 2021
 
-rather than Yabe's notation.  We will also use bases from the above poaper, rather than bases given by Yabe for several of the algebras.
+rather than Yabe's notation.  We will also use bases from the above paper, rather than bases given by Yabe for several of the algebras.
 
 */
 import "Utilities_for_algebra_creation.m": ZZ, QQ, MakeSymmetric;
@@ -399,9 +399,11 @@ intrinsic M6A(al::RngElt) -> AlgGen, SetIndx, AlgMatElt
   P<t> := PolynomialRing(F);
   so5, root5 := HasRoot(t^2-5);
   if so5 then
-    require F!al notin { F | 1,0,1/2, 4/9, -4+root5, -4-root5}: "The value of alpha cannot be 1, 0, 1/2, 4/9, -4+sqrt(5), -4-sqrt(5).";
+    require F!al notin { F | 1,0,1/2, 4/9, -4+2*root5, -4-2*root5}: "The value of alpha cannot be 1, 0, 1/2, 4/9, -4+2*sqrt(5), -4-2*sqrt(5).";
   else
-    require F!al notin { F | 1,0,1/2, 4/9}: "The value of alpha cannot be 1, 0, 1/2, 4/9, -4+sqrt(5), -4-sqrt(5).";
+    require F!al notin { F | 1,0,1/2, 4/9}: "The value of alpha cannot be 1, 0, 1/2, 4/9, -4+2*sqrt(5), -4-2*sqrt(5).";
+    // double check for bt, since root 5 \notin F, can't have bt = 1
+    require -al^2/(4*(2*al-1)) notin { F | 1,0,al}: "The value of beta cannot be 1, 0, al.";
   end if;
   
   A, gens, frob := M6A(:base_ring:=F);

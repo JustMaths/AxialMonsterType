@@ -5,7 +5,7 @@ Yabe's algebras in his own basis
 */
 import "Utilities_for_algebra_creation.m": ZZ, QQ, MakeSymmetric;
 Attach("Utilities_for_algebra_creation.m");
-// NB We use al, bt for the eigenvalues
+// NB Throughout, we use al, bt for the eigenvalues
 
 // --------------------------
 //
@@ -17,7 +17,7 @@ intrinsic III(:base_ring:=QQ, specialise:=false) -> AlgGen, SetIndx, AlgMatElt
   {
   Yabe's III(al, bt, dl) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field. Optional parameter specialise can be set to 3A or IY3 to set field and parameters for those algebras.  Defaults to false.
   
-  NB this gives the 3A(al, bt) and IY_3(al, 1/2, dl) algebras in the notation of McInroy and Shpectorov.
+  NB this gives the 3A(al, bt) = III(al, bt, 0) and IY_3(al, 1/2, mu) = III(al, 1/2, dl), where dl = -2mu -1, algebras in the notation of McInroy and Shpectorov.
   }
   require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
   

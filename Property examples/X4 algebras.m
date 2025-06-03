@@ -32,6 +32,10 @@ assert so;
 assert id eq A![0,0,0,0,4/(bt-1/2)];
 // So the algebra has an identity iff bt ne 1/2
 
+u_0 := (2*bt-1)*A.1 - 8*A.5;
+
+
+
 // <<a_0, a_2 >> = 2B
 assert A.1*A.3 eq 0;
 
@@ -158,19 +162,94 @@ J := prim1[1];
 
 // The equations you get from requiring the coefficients in the double axis subalgebra to be the idempotents are
 J0 := ideal<J | J.1-J.3, J.2-J.4, J.1+J.2+(bt-1/2)/2*J.5-1, 8*J.1*J.2+(bt-1/2)/4*J.5^2-J.5>;
-J0 eq J;
+assert J0 eq J;
 // So the 1-dim ideal is exactly the idempotents in the double axis subalgebra, which is isomorphic to S(dl)
 
-vars := Set(&cat[ Variety(J) : J in prim0]);
-assert #vars eq 10;
-// This 0, the id, 4 axes, and 4 id - axis
+// For the idempotents in the 0-dim ideal, we want to classify these up to automorphism
 
+t1 := MiyamotoInvolution(A.1);
+t2 := MiyamotoInvolution(A.2);
+phi := PermutationMatrix(F, [2,1,4,3,5]);
+                 
+// phi is the automorphism which switches the generating axes
+assert forall{ <i,j> : i,j in [1..4] | (A.i*phi)*(A.j*phi) eq (A.i*A.j)*phi};
+Miy := sub<GL(5,F) | t1,t2>;
+G := sub<GL(5,F) | t1,t2,phi>;
 
+// Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
+assert Order(Miy) eq 4;
+assert Order(G) eq 8;
 
+FCl := AlgebraicClosure(F);
+rt1 := Sqrt(-FCl!(bt-1/2) );
+rt2 := Sqrt(FCl!bt);
+rt3 := Sqrt(FCl!(bt+3/2) );
 
+ACl := ChangeRing(A, FCl);
+frobCl := ChangeRing(frob, FCl);
 
-// ***************  What about over the algeabric closure??????????
-// there are 22
+vars := [ Variety(J, FCl) : J in prim0];
+idems := &cat[ [ ACl![ t[i] : i in [1..5]] : t in var] : var in vars];
+
+// Simplify takes a long time, but partial is quick
+Simplify(FCl:Partial:=true);
+Prune(FCl);
+
+G_FCl := ChangeRing(G, FCl);
+orbs := {@ {@ ACl!u : u in Orbit(G_FCl, Vector(v))@} : v in idems @};
+Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
+
+assert #idems eq 22;
+assert #orbs eq 8;
+assert {*#o : o in orbs*} eq {* 1^^2, 2^^2, 4^^4 *};
+
+// The orbits of length 1 are the identity and zero
+so, id := HasOne(ACl);
+assert so;
+assert id eq ACl![0,0,0,0,4/(bt-1/2)];
+
+// The two orbits of length 2
+v1 := id/2 + rt1*rt2/bt/(bt-1/2)*( (1/4-bt)*(ACl.1+ACl.3) + 1/4*(ACl.2+ACl.4) + 2*ACl.5);
+
+evals, espaces, FL := IdentifyFusionLaw(v1);
+assert HasAlmostMonsterFusionLaw(v1: fusion_values:=[ 1/2, 1/2 -2*rt1*rt2]);
+// it is never of Monster type
+
+assert { t[1] : t in Eigenvalues(v1)} eq { 1, 0, 1/2, 1/2-2*rt1*rt2};
+// Fusion law is graded
+Gr, gr := Grading(FL);
+assert Order(Gr) eq 2;
+
+assert MiyamotoInvolution(v1) eq t1;
+
+assert exists(o1){ o : o in orbs | v1 in o};
+assert #o1 eq 2;
+
+phi_FCl := ChangeRing(phi, FCl);
+assert v1*phi_FCl in o1;
+assert id - v1 notin o1;
+
+assert exists(o1_pair){ o : o in orbs | id-v1 in o};
+
+// The orbits of length 4
+assert {@ ACl.i : i in [1..4] @} in orbs;
+assert {@ id - ACl.i : i in [1..4] @} in orbs;
+
+v2 := id/2 + 1/(2*rt3)*( (1/(2*rt2)-1)*(ACl.1+ACl.2) + (1/(2*rt2)+1)*(ACl.3+ACl.4) - 4*(bt+1/2)/bt/(bt-1/2)*rt2*ACl.5);  
+assert #Eigenvalues(v2) eq 5;
+_, _, FL := IdentifyFusionLaw(v2);
+Gr, gr := Grading(FL);
+assert Order(Gr) eq 2;
+assert MiyamotoInvolution(v2) eq phi;
+
+assert exists(o2){ o : o in orbs | v2 in o};
+assert #o2 eq 4;
+
+phi_FCl := ChangeRing(phi, FCl);
+assert v2*phi_FCl in o2;
+assert id - v2 notin o2;
+
+assert exists(o2_pair){ o : o in orbs | id-v2 in o};
 
 
 // There are nilpotent elements too
@@ -178,20 +257,39 @@ N := NilpotentIdeal(A);
 primN := PrimaryDecomposition(N);
 assert #primN eq 2;
 
-// the first of these are the nilpotent elements in the double axis subalgebra.
-// Don't know about the second
+JN := primN[1];
+assert Dimension(JN) eq 1;
+
+// The equations you get from requiring the coefficients in the double axis subalgebra to be the idempotents are
+JN0 := ideal<JN | JN.1-JN.3, JN.2-JN.4, JN.1+JN.2+(bt-1/2)/2*JN.5, JN.1^2 + (bt-1/2)/2*( JN.1*JN.5 - 1/16*JN.5^2)>;
+assert JN0 eq JN;
+
+n1 := 1/4*(   (-(bt-1/2) + Sqrt(-FCl!1)*rt1*rt2)*(ACl.1+ACl.3)
+            + (-(bt-1/2) - Sqrt(-FCl!1)*rt1*rt2)*(ACl.2+ACl.4)
+            + 4*ACl.5);
+
+assert n1^2 eq 0;
+// This is in the double axis subalgebra
+BCl := sub<ACl | ACl.1+ACl.3, ACl.2+ACl.4>;
+assert Dimension(BCl) eq 3;
+assert n1 in BCl;
+
+// The 0-dim ideal is just the zero vector
+assert Variety(primN[2], FCl) eq [<0,0,0,0,0>];
 
 
 // Check bt eq 1/2
 A, gen, frob := M4A(1/2);
+I, AP := IdempotentIdeal(A);
 assert Dimension(I) eq 1;
 
+prim := PrimaryDecomposition(I);    
 assert #prim eq 3;
 prim0 := [ J : J in prim | Dimension(J) eq 0];
 prim1 := [ J : J in prim | Dimension(J) ne 0];
 
-assert #prim0 eq 2;
-assert Variety(prim0[1]) eq [<0,0,0,0,0>];
+assert #prim1 eq 2;
+assert Variety(prim0[1], FCl) eq [<0,0,0,0,0>];
 
 assert #prim1 eq 2;
 J := prim1[1];
@@ -204,7 +302,19 @@ J0 := ideal<J | J.1-J.3, J.2-J.4, J.1+J.2-1,8*J.1*J.2-J.5>;
 assert J0 eq J;
 
 
+
+
 // only nilpotent elements are in the nilpotent ideal spanned by A.5
+N, AP := NilpotentIdeal(A);
+primN := PrimaryDecomposition(N);
+assert #primN eq 1;
+
+// Variety corresponds to the radical ie prime ideal
+NN := Radical(N);
+
+// NN is the ideal spanned by requiring the coefficients of the axes being 0, ie the nilpotent ideal spanned by A.5
+RR := BaseRing(AP);
+assert ideal<RR|RR.1, RR.2, RR.3, RR.4> eq NN;
 
 
 // =========================================================
@@ -345,6 +455,7 @@ so, id := HasOne(A);
 assert HasJordanFusionLaw(A.5: fusion_value:=al);
 assert Dimension(Eigenspace(A.5, 0)) eq 2;
 assert Dimension(Eigenspace(A.5, al)) eq 2;
+assert MiyamotoInvolution(A.5) eq f;
 
 // Orbits of size 2
 // Each 3C subalgebra has its own identity id_3C and then id_3C - A.5
@@ -352,10 +463,12 @@ id_3C := 1/(al+1)*(A.1+A.3+A.5);
 assert IsIdempotent(id_3C);
 assert HasJordanFusionLaw(id_3C: fusion_value:=al);
 assert Dimension(Eigenspace(id_3C, 1)) eq 3;
+assert MiyamotoInvolution(id_3C) eq t1;
 
 assert IsIdempotent(id_3C-A.5);
 assert HasJordanFusionLaw(id_3C-A.5: fusion_value:=1-al);
 assert Dimension(Eigenspace(id_3C-A.5, 0)) eq 3;
+assert MiyamotoInvolution(id_3C-A.5) eq f*t1*f;
 
 // orbits of size 4
 // the axes, id - axes
@@ -364,14 +477,19 @@ x := id_3C - A.1;
 assert IsIdempotent(x);
 assert HasMonsterFusionLaw(x: fusion_values:=[1-al, al-bt]);
 assert Dimension(Eigenspace(x, 0)) eq 2;
+assert MiyamotoInvolution(x) eq t1;
 
 // Final two orbits: y and id-y
-y := (-1/2*s + (al*r + 1)/(2*(al + 1)))*(A.1+A.2) + (1/2*s + (al*r + 1)/(2*(al + 1)))*(A.3+A.4) + (-(al^2+1)*r -al+1)/(2*(al+1))*A.5;
+y := id/2 + r/2/(al+1)*A![al, al, al, al, -1-al^2] + s/2*A![-1,-1,1,1,0];
 assert IsIdempotent(y);
-evals, esapce, FL := IdentifyFusionLaw(y);
+evals, espace, FL := IdentifyFusionLaw(y);
 assert #FL eq 5;
 assert Order(Grading(FL)) eq 2;
+assert MiyamotoInvolution(y) eq f;
 
+// Nilpotent elements
+N := NilpotentIdeal(A);
+assert Variety(Radical(N), FCl) eq [<0,0,0,0,0>];
 
 //------------------------------
 // check al = -1
@@ -384,7 +502,7 @@ f := PermutationMatrix(F, [2,1,4,3,5]);
 G := sub<GL(5,QQ) | t1,t2,f>;
 
 I := IdempotentIdeal(A);
-asser Dimension(I) eq 1;
+assert Dimension(I) eq 1;
 
 prim := PrimaryDecomposition(I);    
 assert #prim eq 3;
@@ -392,12 +510,11 @@ assert #prim eq 3;
 prim0 := [ J : J in prim | Dimension(J) eq 0];
 prim1 := [ J : J in prim | Dimension(J) ne 0];
 
-// There are two idempotents 
-assert &+[ VarietySizeOverAlgebraicClosure(J) : J in prim0 ] eq 2;
-assert Set(&cat [ Variety(J) : J in prim0 ]) eq {<0,0,0,0,0>, <0,0,0,0,1>};
+// There are two idempotents in the dim 0 part
+assert Set(&cat [ Variety(J, FCl) : J in prim0 ]) eq {<0,0,0,0,0>, <0,0,0,0,1>};
 
 assert #prim1 eq 1;
-
+// Don't know about this part!!!!!!!
 
 
 // =========================================================
@@ -504,22 +621,27 @@ G := sub<GL(5,F) | t1,t2,f>;
 
 assert Order(G) eq 8; // Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
 
+I := IdempotentIdeal(A);
+
 FCl := AlgebraicClosure(F);
 // Need to add roots
 r := Sqrt(FCl!(1-4*bt));
 s := Sqrt(FCl!(1+4*bt));
 t := Sqrt(FCl!(1-8*bt));
 u := Sqrt(FCl!(1-12*bt^2));
-// improve???  Only need 2!!, r, u
 
-A := ChangeRing(A, FCl);
-frob := ChangeRing(frob, FCl);
-idems := FindAllIdempotents(A);
-Simplify(FCl);
+ACl := ChangeRing(A, FCl);
+frobCl := ChangeRing(frob, FCl);
+
+vars := Variety(I, FCl);
+idems := [ ACl![t[i] : i in [1..#t]] : t in vars];
+
+// Simplify takes a long time, but partial is quick
+Simplify(FCl:Partial:=true);
 Prune(FCl);
 
-G := ChangeRing(G, FCl);
-orbs := {@ {@ A!u : u in Orbit(G, Vector(v))@} : v in idems @};
+GCl := ChangeRing(G, FCl);
+orbs := {@ {@ ACl!u : u in Orbit(GCl, Vector(v))@} : v in idems @};
 Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
 
 assert #orbs eq 12;
@@ -528,37 +650,72 @@ assert {* #o : o in orbs *} eq {* 1^^4, 2^^2, 4^^6 *};
 // Orbits of size 1
 // 0, A.5, id and id-A.5
 // need bt \neq -1/4
-assert IsIdempotent(A.5);
-so, id := HasOne(A);
+so, id := HasOne(ACl);
 assert so;
+assert id eq 1/(4*bt+1)*ACl![1,1,1,1,1];
 
-assert HasMonsterFusionLaw(A.5 : fusion_values:=[4*bt, 2*bt]);
-assert Dimension(Eigenspace(A.5, 2*bt)) eq 2;
+assert IsIdempotent(ACl.5);
+assert HasMonsterFusionLaw(ACl.5 : fusion_values:=[4*bt, 2*bt]);
+assert Dimension(Eigenspace(ACl.5, 2*bt)) eq 2;
+t1_FCl := ChangeRing(t1, FCl);
+t2_FCl := ChangeRing(t2, FCl);
+assert MiyamotoInvolution(ACl.5) eq t1_FCl*t2_FCl;
 
 // Orbits of size 2
 // double axes and id - these
+x := ACl.1+ACl.3;
+assert exists(ox){o : o in orbs | x in o};
+assert #ox eq 2;
+f_FCl := ChangeRing(f, FCl);
+assert x*f_FCl in ox;
+
+assert id-x notin ox;
+assert exists(ox_pair){o : o in orbs | id - x in o};
 
 // Orbits of size 4
 // axes, id - axes, y and id -y, z and id-z
-y := 1/2*( (1 + 2*bt/u )*id - 1/u*( r*(A.1 + A.2 - A.3 - A.4) + A.5) );
+assert {@ ACl.i : i in [1..4] @} in orbs;
+assert {@ id-ACl.i : i in [1..4] @} in orbs;
+
+y := 1/2*( (1 + 2*bt/u )*id - 1/u*( r*(ACl.1 + ACl.2 - ACl.3 - ACl.4) + ACl.5) );
 
 assert IsIdempotent(y);
 evals, espace, FL := IdentifyFusionLaw(y);
 assert #FL eq 5;
 assert Order(Grading(FL)) eq 2;
+assert MiyamotoInvolution(y) eq f_FCl;
 
-z := 1/2*( id - 1/(r*s)*( t*(A.1 - A.3) + A.2 + A.4 - A.5));
+assert exists(oy){o : o in orbs | y in o};
+assert #oy eq 4;
+assert y*f_FCl in oy;
+
+assert id-y notin oy;
+assert exists(oy_pair){o : o in orbs | id - y in o};
+
+
+z := id/2 + 1/2/r/s*( t*(ACl.1-ACl.3) + ACl.2 + ACl.4 - ACl.5);
 
 assert IsIdempotent(z);
 evals, espace, FL := IdentifyFusionLaw(z);
 assert #FL eq 5;
 assert Order(Grading(FL)) eq 2;
+assert MiyamotoInvolution(z) eq t1_FCl;
 
+assert exists(oz){o : o in orbs | z in o};
+assert #oz eq 4;
+assert z*f_FCl in oz;
+
+assert id-z notin oz;
+assert exists(oz_pair){o : o in orbs | id - z in o};
+
+// Nilpotent elements
+N := NilpotentIdeal(A);
+assert Variety(Radical(N), FCl) eq [<0,0,0,0,0>];
 
 
 // Now bt = -1/4
 A, gen, frob := M4J(-1/4);
-F<bt> := BaseRing(A);
+F := BaseRing(A);
 
 FCl := AlgebraicClosure(F);
 // Need to add roots
@@ -570,8 +727,8 @@ idems := FindAllIdempotents(A);
 Simplify(FCl);
 Prune(FCl);
 
-G := ChangeRing(G, FCl);
-orbs := {@ {@ A!u : u in Orbit(G, Vector(v))@} : v in idems @};
+GCl := ChangeRing(G, FCl);
+orbs := {@ {@ A!u : u in Orbit(GCl, Vector(v))@} : v in idems @};
 Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
 
 assert #idems eq 12;
@@ -596,6 +753,7 @@ assert IsIdempotent(y);
 evals, espace, FL := IdentifyFusionLaw(y: eigenvalues:= [1,0,-3/2,5/2, -1]);
 assert #FL eq 5;
 assert Order(Grading(FL)) eq 2;
+assert MiyamotoInvolution(y) eq ChangeRing(f, FCl);
 // graded part is the 5/2 and -1 eigenspaces
 
 // =========================================================
@@ -649,6 +807,15 @@ assert Determinant(frob) eq 2^8*bt^2*(2*bt-1)^6;
 A, gen, frob := M4Y_bt();
 F<bt> := BaseRing(A);
 
+t1 := MiyamotoInvolution(A.1);
+t2 := MiyamotoInvolution(A.2);
+
+f := PermutationMatrix(F, [2,1,4,3,5]);
+G := sub<GL(5,F) | t1,t2,f>;
+
+assert Order(G) eq 8; // Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
+
+
 I, AP := IdempotentIdeal(A);
 assert Dimension(I) eq 1;
 
@@ -669,9 +836,22 @@ assert vars eq {@ A!0, x, id, id-x @};
 assert HasJordanFusionLaw(x: fusion_value:=1/2);
 assert Dimension(Eigenspace(x, 0)) eq 2;
 assert Dimension(Eigenspace(x, 1/2)) eq 2;
+assert MiyamotoInvolution(x) eq t1*t2;
+
 
 assert #prim1 eq 4;
 // These are the idempotents in the subalgebras <<a_0, a_2> \cong S(\dl), <<a1, a3>> and id - x, for x in each.
+
+// Nilpotent elements
+
+N := NilpotentIdeal(A);
+primN := PrimaryDecomposition(N);
+
+primN0 := [ J : J in primN | Dimension(J) eq 0];
+primN1 := [ J : J in primN | Dimension(J) ne 0];
+
+assert Variety(Radical(primN0[1]), FCl) eq [<0,0,0,0,0>];
+// These are the nilpotents in the subalgebras <<a_0, a_2> \cong S(\dl), <<a1, a3>>.
 
 
 
@@ -682,6 +862,7 @@ assert #prim1 eq 4;
 // =========================================================
 A, gen, frob := M4Y_al();
 F<al> := BaseRing(A);
+bt := (1-al^2)/2;
 
 // identity
 so, id := HasOne(A);
@@ -763,6 +944,7 @@ assert A.3*a eq 1/2*a + 3/2*c;
 // --------------------------------
 A, gen, frob := M4Y_al();
 F<al> := BaseRing(A);
+bt := (1-al^2)/2;
 
 t1 := MiyamotoInvolution(A.1);
 t2 := MiyamotoInvolution(A.2);
@@ -791,6 +973,7 @@ Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
 assert #orbs eq 12;
 assert {* #o : o in orbs *} eq {* 1^^4, 2^^2, 4^^6 *};
 
+// Same as for 4B
 
 // ***********************************************
 
@@ -1098,6 +1281,3 @@ StrA := [[ Eltseq(v) : v in r ] : r in BasisProducts(A) ];
 
 assert StrA eq StrB;
 // Hence M4A(1/4,1/8) and M4J(1/4,1/8) are isomorphic
-
-
-

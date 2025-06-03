@@ -22,7 +22,7 @@ function NilpotentIdeal(A)
   x := &+[ P.i*AP.i : i in [1..Dimension(A)]];
   J := ideal< P | Eltseq(x^2)>;
   
-  return J;
+  return J, AP;
 end function;
 
 function VarietyOverAlgbebraicClosure(A, I)

@@ -4,4 +4,5 @@
   2-gen_Monster_type.m
   Split_spin_factor.m
   Highwater_quotients.m
+  Yabe_algebras.m
 }

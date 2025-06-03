@@ -1,6 +1,6 @@
-AttachSpec("2-gen Monster.spec");
-AttachSpec("../AxialTools/AxialTools.spec");
-load "Property examples/Find idempotents.m";
+AttachSpec("../2-gen Monster.spec");
+AttachSpec("../../AxialTools/AxialTools.spec");
+load "Find idempotents.m";
 
 QQ := Rationals();
 
@@ -199,49 +199,6 @@ assert Dimension(ideal<AA | z1-z2, z2-z3>) eq 3;
 
 // Look at the idempotents
 
-// First do characteristic 3
-
-A, gen, frob := M3A(:base_ring:=GF(3));
-F<al,bt> := BaseRing(A);
-
-idems := FindAllIdempotents(A);
-
-t1 := MiyamotoInvolution(A.1);
-t2 := MiyamotoInvolution(A.2);
-G := sub<GL(4,F) | t1,t2>;
-
-orbs := {@ {@ A!u : u in Orbit(G, Vector(v))@} : v in idems @};
-Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
-
-assert #orbs eq 8;
-assert {* #o : o in orbs *} eq {* 1^^4, 3^^4 *};
-
-// idempotents in an orbit of size 1
-// 0 is always an idempotent
-
-// has an identity iff bt \neq -1
-so, id := HasOne(A);
-assert so;
-assert id := 2*(al+1)/(al*(bt+1));
-
-x := 1/(bt+1)*(A.1+A.2+A.3);
-assert IsIdempotent(x);
-assert {e[1] : e in Eigenvalues(x)} := {0,1};
-_,_,S := JordanForm(AdjointMatrix(x));
-assert exists{s : s in S | s[2] eq 2};
-// So the adjoint has a jordan block of size 2, so it is not semisimple
-
-// other idempotent is 1-x
-assert IsIdempotent(id-x);
-
-// idempotents in an orbit of size 3
-
-
-
-
-
-// --------------------------------------------
-
 A, gen, frob := M3A();
 F<al,bt> := BaseRing(A);
 
@@ -276,8 +233,15 @@ so, id := HasOne(A);
 assert so;
 assert id eq -4*(2*al -1)/(al*(3*al^2 + 3*al*bt - bt - 1))*A.4;
 
+len_id := (9*al + bt - 5)/(3*al^2 + 3*al*bt - bt - 1);
+assert InnerProduct(id*frob, id) eq len_id;
+
+
 x := r*(A.1+A.2+A.3) + 2*(2*al - 1)/(al*(3*al^2 + 3*al*bt - bt - 1)) * ((3*al + bt + 1)*r -1)*A.4;
 assert IsIdempotent(x);
+
+assert InnerProduct(x*frob, x) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (9*al + bt - 5) - (3*al-bt-1)^2*r);
+
 // There are 3 eigenvalues, 1, 0 and 
 assert Dimension(Eigenspace(x, (-3*al + bt + 1)/2*r + 1/2)) eq 2;
 // But it is not Jordan type a in general as not graded.  Have a*a = {1,0,a}
@@ -325,6 +289,62 @@ assert coord[3] eq -(2*al-1)*(2*bt-1);
 // both x and A.4 are fixed by the Miyamoto group, so y in in an orbit of size 3
 
 assert IsIdempotent(id-y);
+
+// --------------------------------------------
+
+// Look at characteristic 3
+
+A, gen, frob := M3A(:base_ring:=GF(3));
+F<al,bt> := BaseRing(A);
+
+idems := FindAllIdempotents(A);
+
+t1 := MiyamotoInvolution(A.1);
+t2 := MiyamotoInvolution(A.2);
+G := sub<GL(4,F) | t1,t2>;
+
+orbs := {@ {@ A!u : u in Orbit(G, Vector(v))@} : v in idems @};
+Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
+
+assert #orbs eq 8;
+assert {* #o : o in orbs *} eq {* 1^^4, 3^^4 *};
+
+// idempotents in an orbit of size 1
+// 0 is always an idempotent
+
+// has an identity iff bt \neq -1
+so, id := HasOne(A);
+assert so;
+assert id eq 2*(al+1)/(al*(bt+1))*A.4;
+
+x := 1/(bt+1)*(A.1+A.2+A.3);
+assert IsIdempotent(x);
+assert {e[1] : e in Eigenvalues(x)} eq {0,1};
+assert not IsSemisimple(x);
+
+_,_,S := JordanForm(AdjointMatrix(x));
+assert exists{s : s in S | s[2] eq 2};
+// So the adjoint has a jordan block of size 2, so it is not semisimple
+
+// other idempotent is 1-x, also not semisimple
+assert IsIdempotent(id-x);
+assert not IsSemisimple(id-x);
+
+// idempotents in an orbit of size 3
+assert {@ A.i : i in [1..3] @} in orbs;
+assert {@ id - A.i : i in [1..3] @} in orbs;
+
+// v1 is not semisimple
+v1 := 1/(bt+1)*( (al-bt)/(al+1)*A.1 + A.2 + A.3 - A.4);
+assert not IsSemisimple(v1);
+
+assert exists(o1){o : o in orbs | v1 in o};
+assert id -v1 notin o1;
+
+assert exists(o1_pair){o : o in orbs | id-v1 in o};
+
+
+
 
 
 //---------------------------------------------------

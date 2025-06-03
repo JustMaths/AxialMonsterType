@@ -112,7 +112,7 @@ intrinsic M4A(bt::RngElt) -> AlgGen, SetIndx, AlgMatElt
 end intrinsic;
 
 // Yabe IV_2(al, al^2/2, 1/al)
-// Used a better basis so that the 5th basis element is the third axis in the 3C(al) subalgebras <a_0,a_2> and <a_1, a_3>.
+// Used a better basis so that the 5th basis element is the third axis in the 3C(al) subalgebras <<a_0,a_2>> and <<a_1, a_3>>.
 intrinsic M4B(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 4B(al, al^2/2) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
@@ -203,11 +203,10 @@ intrinsic M4J(bt::RngElt) -> AlgGen, SetIndx, AlgMatElt
 end intrinsic;
 
 // Yabe IV_2(1/2, bt, (1-4bt)/2bt)
-// <a_0, a_2> \cong <a_1, a_3> \cong S(delta), the spin factor algebra, where delta = 2^5*bt*(2*bt-1) - 2.
+// <a_0, a_2> \cong <a_1, a_3> \cong S(delta), the spin factor algebra, where delta = 2^5*bt*(2*bt-1) + 2.
 // We choose the 5th basis vector as generically the intersection of these two subalgebras, we normalise so that it is an idempotent.
 // NB delta is never equal to 2
 // But delta can equal -2 iff bt = 1/4.  Then these subalgebras become the 2-dimensional S(2)^\circ and don't intersect.  However, the algebra has no non-trivial proper ideals!
-// NB projection graph is always connected, but can lose the edge between a_0 and a_2 iff bt=1/4
 intrinsic M4Y_bt(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 4Y(1/2, bt) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
@@ -317,12 +316,15 @@ intrinsic M5A(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   G := Sym(6)!!DihedralGroup(5);
   
   V := VectorSpace(F,6);
-  S := [<1,1,Eltseq(V.1)>, <1,2,Eltseq(bt*(V.1+V.2)+V.6)>, <1,3,Eltseq(-bt/2*(&+[V.i : i in [1..5]]) + bt*(V.1+V.3)-V.6)>, <1,6,Eltseq(-(al-bt)*bt*V.1 + (al-bt)*bt/2*(V.2+V.5) +(al-bt)*V.6)>, <6,6,Eltseq(-(7*al-3)*(al-bt)*bt/2^5*(&+[V.i : i in [1..5]]) -5*(al-bt)*bt/2*V.6)>];
+  S := [<1,1,Eltseq(V.1)>, <1,2,Eltseq(bt/4*(3*(V.1+V.2) -(V.3+V.4+V.5) +V.6))>,
+        <1,3,Eltseq(bt/4*(3*(V.1+V.3) -(V.2+V.4+V.5) -V.6))>,
+        <1,6,Eltseq((al-bt)*(V.2+V.5 -(V.3+V.4) +V.6))>,
+        <6,6,Eltseq(-(3*al-7)*(al-bt)/8/bt*(&+[V.i : i in [1..5]]))>];
   
   mult := BuildSymmetricMultiplication(S, G);
   A := Algebra<F, 6 | mult>;
   
-  T := [ <1,1,F!1>, <1,2,3/4*bt>, <1,3,3/4*bt>, <1,6,-5/4*bt*(al-bt)>, <6,6, 5/2^6*bt*(11*al+1)*(al-bt)>];
+  T := [ <1,1,F!1>, <1,2,3/4*bt>, <1,3,3/4*bt>, <1,6,0>, <6,6, -5/2^3*(3*al-7)*(al-bt)/bt>];
   frob := BuildSymmetricBilinearForm(T, G);
   
   return A, {@ A.1, A.2 @}, frob;
@@ -342,7 +344,6 @@ intrinsic M5A(al::RngElt) -> AlgGen, SetIndx, AlgMatElt
     require F!al notin { F | 1,0,-1/3}: "The value of beta cannot be 1, 0, -1/3, or 1/5.";
   end if;
 
-  
   A, gens, frob := M5A(:base_ring:=F);
   
   FF<x> := BaseRing(A);
@@ -356,6 +357,7 @@ end intrinsic;
 //          Algebras on X_6 axet
 //
 // --------------------------------------------
+// Choose basis with 
 intrinsic M6A(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 6A algebra over a function field with variable al, with generators and its Frobenius form.
@@ -486,13 +488,14 @@ end intrinsic;
 // --------------------------------------------
 intrinsic IY3(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  
+  TO DO
   }
   
 end intrinsic;
 
 intrinsic IY3(al::RngElt, mu::RngElt) -> AlgGen, SetIndx, AlgMatElt
   {
+    TO DO
   }
   if mu eq 1 then    
     mult := [[[1,0,0,0], [1/2,1/2,(al-1/2),1], [0,0,al,0], [0,0,0,0]],
@@ -507,13 +510,14 @@ end intrinsic;
 
 intrinsic IY5(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-  
+    TO DO
   }
   
 end intrinsic;
 
 intrinsic IY5(al::RngElt) -> AlgGen, SetIndx, AlgMatElt
   {
+    TO DO
   }
 
 end intrinsic;

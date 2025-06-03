@@ -3,8 +3,7 @@
 Yabe's algebras in his own basis
 
 */
-import "Utilities_for_algebra_creation.m": ZZ, QQ, MakeSymmetric;
-Attach("Utilities_for_algebra_creation.m");
+import "Utilities_for_algebra_creation.m": QQ;
 // NB Throughout, we use al, bt for the eigenvalues
 
 // --------------------------
@@ -130,8 +129,8 @@ intrinsic IV1(:base_ring:=QQ, specialise:=false) -> AlgGen, SetIndx, AlgMatElt
     
     FF<x,y> := BaseRing(A);
     
-    F<al> := FunctionField(base_ring);
-    phi := hom<FF->F | [al, al/2]>;
+    F<bt> := FunctionField(base_ring);
+    phi := hom<FF->F | [2*bt, bt]>;
   
     A := ChangeRing(A, F, phi);
     
@@ -355,7 +354,7 @@ intrinsic VI2(:base_ring:=QQ) -> AlgGen, SetIndx, AlgMatElt
   {
   Yabe's VI_2(al, -al^2/(2(2al-1))) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
   
-  NB this is the 6A(al, -al^2/(2(2al-1))) algebra in the notation of McInroy and Shpectorov.
+  NB this is the 6A(al, -al^2/(4(2al-1))) algebra in the notation of McInroy and Shpectorov.
   }
   require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
   F<al> := FunctionField(base_ring);

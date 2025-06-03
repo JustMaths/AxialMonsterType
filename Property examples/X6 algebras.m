@@ -13,6 +13,11 @@ A , gen, frob := M6A();
 F<al> := BaseRing(A);
 
 bt := -al^2/4/(2*al-1);
+
+assert bt-1 eq (-al^2-8*al+4)/(4*(2*al-1));
+assert al-bt eq al*(9*al-4)/(4*(2*al-1));
+
+
 // Identity
 so, id := HasOne(A);
 assert so;
@@ -24,29 +29,19 @@ u1 := al*A.1-(A.4+A.7);
 u2 := al*(3*al-2)*(7*al-3)/(2*al-1)*A.1 - 2*(3*al-2)*(A.3+A.5) - 2*(5*al-2)*A.8;
 u3 := (3*al-2)*(A.2+A.6 -al/2/(2*al-1)*A.4) +al*A.8;
 
-// f[1,4] = f[2,5] = f[3,6] neq 0, f[1,3] neq 0, f[1,5] neq 0. \\ Check Quadratics
-// The projection graph is connected 
+assert A.1*u1 eq 0;
+assert A.1*u2 eq 0;
+assert A.1*u3 eq 0;
 
-Orbit1 := [A.1, A.3, A.5];
-Orbit2 := [A.2, A.4, A.6];
+v1 := al*A.1 -2*(2*al-1)*(A.3+A.5-A.8);
+v2 := A.4-A.7;
 
-t1 := MiyamotoInvolution(A.1);
-t2 := MiyamotoInvolution(A.2);
+assert A.1*v1 eq al*v1;
+assert A.1*v2 eq al*v2;
 
-assert A.1*t2 in Orbit1;
-assert A.1*t2*t1 in Orbit1;
-assert A.2*t1 in Orbit2;
-assert A.2*t1*t2 in Orbit2;
-
-assert  InnerProduct(Vector(A.1*t2)*frob, Vector(A.2*t1)) eq 1/2*al;
-
+// The orbit projection graph is connected 
+assert frob[1,4] eq al/2;
 // So there are no Ideals containing Axes.
-
-
-
-bt := (-al^2)/(4*(2*al-1));
-
-
 
 assert Determinant(frob) eq (-1/2^15)*(al-1)^3*(3*al-2)*(7*al-4)^5*(12*al^2-1*al-2)*(al^2+4*al-2)^4/(2*al-1)^11;
 // since al can't be 1, we only need to check al = 2/3, al = 4/7, 12*al^2-1*al-2=0 and al^2+4*al-2 = 0
@@ -100,16 +95,14 @@ assert Evaluate(12*al^2-1*al-2, 22/49) eq -2^3*3^2/7^4;
 /*
 So can split into cases:
 
-1. al = 2/3
-  a. char \neq 5
-  b. char = 5
+1. al = 2/3 and char \neq 5
 
-2. al = 4/7
-  a. char \neq 5
-  b. char = 5
+2. al = 4/7 and char \neq 5
 
 3. al^2+4*al-2=0
-  a. Not char eq 5 (this case is covered above)
+  a. Not char eq 5
+  b. char 5, al = 2/3 = -1
+  c. char 5, al = 4/7 = 2
 
 4. 12*al^2-1*al-2=0
 
@@ -130,14 +123,11 @@ assert charpoly eq t*(t-5/3)*(t - 5/6)^2*(t - 1/6)^2*(t^2 - 10/3*t + 5/3);
 
 // Clearly the nullspace is 1-dimensional unless char is 5.
 
-
 // double check characteristics which this has a larger nullspace
 // Since the characteristic of F is not 2 or 3, in any characteristic the nullspace of frob is the same as the nullspace of 6*frob
 M := HermiteForm(ChangeRing(6*frob, Integers()));
 assert Diagonal(M) eq [ 1, 1, 1, 5, 10, 10, 30, 0 ];
 // So nullspace is indeed larger iff field is char 5
-
-
 
 // the Radical is 1 dim
 assert Dimension(Nullspace(frob)) eq 1;
@@ -160,81 +150,6 @@ assert Dimension(Eigenspace(B.1,2/3)) eq 2;
 assert Dimension(Eigenspace(B.1,-1/3)) eq 2;
 
 
-
-// This quotient is also of Monster type and is 6A(2/3,−1/3)^x
-
-// -------------------------------------
-A, gen, frob:= M6A(GF(5)!2/3);
-
-// the Radical is 5 dim
-assert Dimension(Nullspace(frob)) eq 5;
-R := ideal<A| [A!x : x in Basis(Nullspace(frob))]>;
-
-// Inside R we have the annihilator still
-assert A.8 in Annihilator(A);
-assert Dimension(Annihilator(A)) eq 1;
-
-u1 := A.8;
-u2 := &+[A.i : i in [1..6]] + 3*A.7 + A.8;
-u3 := A.1+A.3+A.5 - (A.2+A.4+A.6);
-
-u4 := A.1-A.3+A.4-A.6;
-u5 := A.2-A.6-(A.3-A.5);
-
-assert forall{ u : u in [u1,u2,u3,u4,u5] | u in R};
-assert IsIndependent([u1,u2,u3,u4,u5]);
-// So u1, .., u5 is a basis for R
-
-t1 := MiyamotoInvolution(A.1);
-t2 := MiyamotoInvolution(A.2);
-Miy := sub<GL(8,5)|t1,t2>;
-assert Order(Miy) eq 6;
-
-// Ordinary rep theory, so, by Maschke's theorem, R decomposes as the direct sum of irreducibles
-// u1, u2,u3 each generate 1-dim modules, <u4, u5> is 2-dim, so G-modules structure is 1+1+1+2
-
-// Now consider what the possible G-modules are for ideals.
-
-assert forall{ u : u in [u1,u2,u4,u5] | IsZero(A.7*u)};
-assert A.7*u3 eq -u3;
-// So whenever we see u3 in the decomposition, we have (u3)
-
-U3 := ideal<A|u3>;
-assert Dimension(U3) eq 4;
-assert u2 in U3 and u4 in U3 and u5 in U3;
-
-// Note that u1 \notin U3, so we have R = <<u1>> \oplus U3 and this is invariant under multiplication by A
-// So just need to check for subideals of U3
-
-// First check for a 1-dimensional ideal - must be a linear combination of u2 and u3
-assert u2^2 eq -u2;
-assert u2*u3 eq 3*u3;
-assert u3^2 eq 3*u2;
-// So if the linear combination is a*u2 + b*u3, multiplying by u2, we see that we need a=-k*a and b = 3*kb for some k, a contradiction.  So, whever you see u2 in the decomposition, you get u3 also, and vice versa.
-
-assert A.1*u2 eq -u2 + 3*u3 + 2*u4-u5;
-// So <<u2,u3>> is not a 2-dim ideal
-
-assert u4*u4 eq 2*u2 + u4+3*u5;
-// So <<u4,u5>> is also not a 2-dim ideal.
-
-// Hence there are no proper ideal of U3.
-B, quo := quo<A|U3>;
-assert HasMonsterFusionLaw(B.1: fusion_values:=[4,3]);
-assert Dimension(Eigenspace(B.1,0)) eq 1;
-assert Dimension(Eigenspace(B.1,4)) eq 1;
-assert Dimension(Eigenspace(B.1,3)) eq 1;
-// So B is of Monster type.  It has a 1-dim annihilator
-
-bas := [B.1,B.3,A.5@quo,3*u1@quo];
-BB := ChangeBasis(B, bas);
-
-assert [[ Eltseq(e) : e in r] : r in BasisProducts(BB)] eq [[ Eltseq(e) : e in r] : r in BasisProducts(M3A(GF(5)!4, GF(5)!3))];
-// So the quotient is equal to 3A, however, the 6 axes are all distinct.
-
-// The quotient by u1 is still 6A(2/3,−1/3)^x
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Case 2
@@ -252,7 +167,6 @@ assert charpoly eq t^5*(t - 15/7)*(t^2 - 34/7*t + 165/49);
 assert 165 eq 3*5*11;
 // if char \neq 5, then since 165 and 15 can are never zero as char is not 3,7,11, nullspace is always 5 dim.
 
-
 // double check characteristics which this has a larger nullspace
 // Since the characteristic of F is not 7, in any characteristic the nullspace of frob is the same as the nullspace of 7*frob
 M := HermiteForm(ChangeRing(7*frob, Integers()));
@@ -260,102 +174,57 @@ assert Diagonal(M) eq [ 1, 5, 0, 0, 0, 0, 0, 0];
 
 // So nullspace is indeed larger iff field is char 5
 
-
-// Look at the general case first
-
-// the Radical is normally 5 dim
+// the Radical is 5-dim if char is not 5
 assert Dimension(Nullspace(frob)) eq 5;
 R := ideal<A| [A!x : x in Basis(Nullspace(frob))]>;
 u1 := A.1 - A.3;
-u3 := A.3 - A.5;
-u2 := A.2 - A.4;
-u4 := A.4 - A.6;
-u5 := A.8;
-assert u1 in R and u2 in R and u3 in R and u4 in R and u5 in R;
-assert IsIndependent([u1,u2,u3,u4,u5]);
+u2 := A.1 - A.5;
+u3 := A.4 - A.6;
+u4 := A.4 - A.2;
+z := A.8;
+assert u1 in R and u2 in R and u3 in R and u4 in R and z in R;
+assert IsIndependent([u1,u2,u3,u4,z]);
 
 // The quotient is 3 dimensional
 B, quo := quo<A|R>;
-assert sub<B|B.1,B.2> eq B;  // so B is 2-generated
-B.1 eq A.1@quo;
-B.2 eq A.2@quo;
-HasJordanFusionLaw(B.1:fusion_value:=4/7);
-HasJordanFusionLaw(B.2:fusion_value:=4/7);
+assert sub<B|A.1@quo, A.2@quo> eq B;  // so B is 2-generated
+assert HasJordanFusionLaw(A.1@quo : fusion_value:=4/7);
+assert HasJordanFusionLaw(A.2@quo : fusion_value:=4/7);
 // So the quotient is a 3C(4/7)
 
 // Now check for other ideals of R
 // Char \neq 3, so ordinary rep theory
 // It is clear that the submodule structure is <u1,u3> \oplus <u_2,u_4> \oplus <u5>
 
-// No 1-dim ideal.
-assert ideal<A|u5> eq R;
+// No 1-dim ideal.  Any constituent with z also contains <u1,u2> and <u3,u4> in any characteristic (NB al=4/7 => char \neq 7)
+assert -7/2*A.1*z eq u1 + u2 + z;
+assert -7/2*A.4*z eq u3 + u4 + z;
 
-// No 4 dim ideal
-assert ideal<A|u2> eq R;
+assert ideal<A|z> eq R;
 
-// Just need to check for 2-dim ideals.  This must be a diagonal copy inside the 2+2
-// Consider the group structure
+// Now suppose that I contains a submodule isomorphic to the 2-dim irreducible
+// So it contains some diagonal copy inside 2+2
+// Clearly u1 pairs with u3 and u2 pairs with u4
 
-// Edit to match the text **************************************
+assert 7*A.1*u1 eq  u1 + 5*u2 + 3*z;
+assert 7*A.1*u3 eq  2*( u1+u2 - u3 + u4 +z);
 
-t2 := MiyamotoInvolution(A.2);
-assert u1*t2 eq -u1;
-assert u4*t2 eq -u4;
-// so must have a*u1 + b*u4 for some a and b
-assert (A.1+A.3)*u1 eq u1;
-assert (A.1+A.3)*u4 eq 6/7*u1-2/7*u4;
-// So there are no subideals
+assert 7*A.1*u2 eq  5*u1 + u2 + 3*z;
+assert 7*A.1*u4 eq  2*( u1+u2 + u3 - u4 +z);
 
+// Must contain z, unless possibly char = 5 and take u1+u3 and u2+u4
 
-//------------------------------------
-// Now check char 5
-A, gen, frob := M6A(GF(5)!4/7);
-assert GF(5)!4/7 eq 2;
+// Unless we are in this case, by the above, must contain u1,u2,u3 and u4
 
-assert Dimension(Nullspace(frob)) eq 7;
-R := ideal<A| [A!x : x in Basis(Nullspace(frob))]>;
-u1 := A.1 - A.3;
-u3 := A.3 - A.5;
-u2 := A.2 - A.4;
-u4 := A.4 - A.6;
-u5 := A.8;
-u6 := A.1+A.2+A.3 - 3*A.7;
-u7 := A.4+A.5+A.6 - 3*A.7;
-
-// From above, u1, .., u5 in R
-assert u6 in R and u7 in R;
-assert IsIndependent([u1,u2,u3,u4,u5,u6,u7]);
-
-// Module structure is now 1+1+1+2+2
-
-// Still no 2-dim ideals where the group acts non-trivially
-// As above, would have a*u1 + b*u4 for some a and b
-assert (A.1+A.3)*u1 eq u1;
-assert (A.1+A.3)*u4 eq 6/7*u1-2/7*u4;
-
-I1 := ideal<A|u1>;
-assert Dimension(I1) eq 5;
-assert u5 in I1;
-// This is the 5-dimensional ideal above
-
-// Only other possibility is a sum of trivial modules
-assert A.8*u6 in I1;
-assert A.8*u7 in I1;
-assert A.1*u6 notin I1;
-assert A.1*u7 in I1;
-assert not IsZero(A.8*u6) and not IsZero(A.8*u7) and not IsZero(A.1*u7);
-// So the only ideals are I1 and R
-
-// Here 3C(4/7) = 3C(2)
-// it has a 2-dim ideal, with a quotient 1A.  This agrees.
+// So no subideals
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Case 3
 //
-
 // al^2+4*al-2=0
-// And not (char eq 5 and al = -1, or 2) as this is covered above.
+
+// First assume not (char eq 5 and al = -1, or 2)
 
 // NB char \neq 3 as then al^2 + al +1 = al^2 -2al + 1 = (al-1)^2.
 
@@ -371,207 +240,306 @@ assert Evaluate(bt, -2-r) eq 1/2;
 assert Evaluate(bt, -2+r) eq 1/2;
 
 // Two roots to check
-A, gen, frob := M6A(-2-r);
+// Let \zeta be a square root of 6
+for zt in [r, -r] do
+  AL := -2+zt;
+  A, gen, frob := M6A(AL);
 
-assert Dimension(Nullspace(frob)) eq 4;
+  assert Dimension(Nullspace(frob)) eq 4;
 
-// Can't use char poly check as for GF(19) we get a t^5 in the char poly of frob, but only a 4-dim nullspace.
+  // Can't use char poly check as for GF(19) we get a t^5 in the char poly of frob, but only a 4-dim nullspace.
 
-// To check whether frob can have a larger nullspace  over some characteristics, we perform Gaussian elimination by hand.  We take care not to:
-// multiply any row by any prime power, except powers of 2, 3, or 5.
-// add a scalar multiple of a row to annother where the scalar has denominator a forbidden prime power.
+  // To check whether frob can have a larger nullspace  over some characteristics, we perform Gaussian elimination by hand.  We take care not to:
+  // multiply any row by any prime power, except powers of 2, 3, or 5.
+  // add a scalar multiple of a row to annother where the scalar has denominator a forbidden prime power.
 
-M := frob;
+  M := frob;
 
-AddRow(~M, 1, 1, 4);
-AddRow(~M, 1, 2, 5);
-AddRow(~M, 1, 3, 6);
-AddRow(~M, -1, 4, 5);
-AddRow(~M, -1, 4, 6);
+  AddRow(~M, 1, 1, 4);
+  AddRow(~M, 1, 2, 5);
+  AddRow(~M, 1, 3, 6);
+  AddRow(~M, -1, 4, 5);
+  AddRow(~M, -1, 4, 6);
 
-AddRow(~M, -1, 2, 3);
-AddRow(~M, 1, 1, 3);
-AddRow(~M, -2, 3, 4);
+  AddRow(~M, -1, 2, 3);
+  AddRow(~M, 1, 1, 3);
+  AddRow(~M, -2, 3, 4);
 
-AddRow(~M, -2, 3, 7);
+  AddRow(~M, -2, 3, 7);
 
-AddRow(~M, -5/4*r, 7,8);
+  AddRow(~M, 5/4*zt, 7,8);
 
-AddRow(~M, -r/4, 7, 3);
-AddRow(~M, -3, 3, 8);
+  AddRow(~M, zt/4, 7, 3);
+  AddRow(~M, -3, 3, 8);
 
-SwapRows(~M, 4, 7);
+  SwapRows(~M, 4, 7);
 
-SwapRows(~M, 1, 4);
-MultiplyRow(~M, -1, 1);
-AddRow(~M, -1, 1, 4);
-AddRow(~M, -1/8*(-r+4), 1, 2);
+  SwapRows(~M, 1, 4);
+  MultiplyRow(~M, -1, 1);
+  AddRow(~M, -1, 1, 4);
+  AddRow(~M, -1/8*(zt+4), 1, 2);
 
-AddRow(~M, 1, 2, 4);
+  AddRow(~M, 1, 2, 4);
 
-SwapRows(~M, 3, 4);
+  SwapRows(~M, 3, 4);
 
-// The matrix is now in Row Echelon Form
-assert M[1,1] eq 1;
-assert forall{ j : j in [2..8] | M[j,1] eq 0};
+  // The matrix is now in Row Echelon Form
+  assert M[1,1] eq 1;
+  assert forall{ j : j in [2..8] | M[j,1] eq 0};
 
-assert M[2,2] eq 1/8*(r+4);
-assert forall{ j : j in [3..8] | M[j,2] eq 0};
+  assert M[2,2] eq 1/8*(-zt+4);
+  assert forall{ j : j in [3..8] | M[j,2] eq 0};
 
-assert M[3,3] eq -3/8*(r+4);
-assert forall{ j : j in [4..8] | M[j,3] eq 0};
+  assert M[3,3] eq -3/8*(-zt+4);
+  assert forall{ j : j in [4..8] | M[j,3] eq 0};
 
-assert Eltseq(M[4]) eq [0,0,0,0,0,0, -5/4*(r +2), -5/4*(r+3)];
+  assert Eltseq(M[4]) eq [0,0,0,0,0,0, 5/4*AL, 5/4*(AL-1)];  // is zero in char 5
 
-// The last 4 rows are all zero
-assert forall{ j : j in [5..8] | IsZero(M[j])};
+  // The last 4 rows are all zero
+  assert forall{ j : j in [5..8] | IsZero(M[j])};
 
-// Note that r = -4 iff 6 = r^2 = 16 iff char eq 5
-// Since char \neq 5, rows M[2,2] and M[3,3] are always non-zero
+  // Note that zt = -4 iff 6 = zt^2 = 16 iff char eq 5
+  // Since char \neq 5, rows M[2,2] and M[3,3] are always non-zero
 
-// Note that the last row can only be zero if r = -2 and r = -3, a contradiction.
-// Hence rank of M=frob is always 4 in any char.
+  // Note that the last row cannot be zero
+  // Hence rank of M=frob is always 4 in any char.
 
+  R := ideal<A| [A!x : x in Basis(Nullspace(frob))]>;
+
+  B, quo := quo<A|R>;
+
+  // We identify the quotient
+  z1 := A.7@quo;
+  z2 := 2/15*(2*zt-3)*A.8@quo; // NB in char 5 we just map 1/2A.8@quo and then this should be in the annihilator of the algebra
+  e := 2/3*(A.1-A.3 + A.1-A.5)@quo;
+  f := 2/3*(-(A.1 - A.3) + 2*(A.1-A.5) )@quo;
+
+  assert IsIndependent([z1,z2,e,f]);
+
+  // check the structure constants wrt this basis
+  assert z1^2 eq z1;
+  assert z2^2 eq z2;
+  assert z1*z2 eq 0;
+
+  assert e*z1 eq AL*e;
+  assert f*z1 eq AL*f;
+  assert e*z2 eq (1-AL)*e;
+  assert f*z2 eq (1-AL)*f;
+
+  z := AL*(AL-2)*z1 + (AL-1)*(AL+1)*z2;
+  assert e^2 eq -z;
+  assert f^2 eq -z;
+  assert e*f eq -1/2*z;
+
+  // So B is isomorphic to the split spin factor algebra with mu = 1/2 - this is IY_3(AL, 1/2, 1/2)
+
+
+  // Need to check for sub ideals of R
+  // be careful to make the analysis valid in char 5 where possible and be explicit where extra work is required
+  
+  r1 := A.1-A.3 + A.4 - A.6;
+  r2 := A.1-A.5 + A.4 - A.2;
+  r3 := A.1+A.3+A.5 - (A.2+A.4+A.6);
+  r4 := A.1+A.3+A.5+A.2+A.4+A.6 -3*AL*A.7 +2*(AL-1)*A.8;
+
+  assert forall{ v : v in [r1,r2,r3,r4] | v in R};
+  assert IsIndependent([r1,r2,r3,r4]);
+
+  t1 := MiyamotoInvolution(A.1);
+  t2 := MiyamotoInvolution(A.2);
+  G := sub<GL(8,F)|t1,t2>;
+  M := GModule(G);
+  // <r1, r2> is a 2-dim irreducible module
+  // r3 and r4 both generate trivial modules
+  // the module structure of R is 2 + 1 + 1
+
+  // First consider an ideal I which has a constituent <r1,r2>
+  assert 6*r1^2 eq -2*(AL-1)*r1 + 4*(AL-1)*r2 + (zt+6)*r4;
+  assert 4*(A.1-A.4)*r1 eq (4-zt)*r3;
+  assert 4-zt eq 2-AL;
+
+  // at least one of zt-6 and 4-zt are not zero.  Otherwise zt = 4 = -6, hence char = 5 and zt = -1
+  
+  // Hence I contains a constituent which is a trivial module
+
+  // So now may assume that I is a trivial module. 
+  assert r3^2 eq zt/2*r4;
+  assert r3*r4 eq 3/2*(9*zt-22)*r3;
+  assert r4^2 eq 1/2*(5*zt-12)*r4;
+  
+  assert zt^2*9^2 -22^2 eq 2;
+  assert 5^2*zt^2-12^2 eq 6;
+  // so neither is zero in any characteristic
+  
+  // Suppose that the trivial constituent of I is spanned by a linear combination a*r3 + b*r4.  Multiplying by r4, we see that we need 3/2*(9*zt-22) = 1/2*(5*zt-12).  But then,
+  
+  assert 3/2*(9*zt-22) - 1/2*(5*zt-12) eq 11*zt -27;
+  assert 27^2 -11^2*6 eq 3;
+  // Hence if I contains a constituent which is a trivial module, it contains the entire <r3,r4>
+  
+  assert (A.1-A.3)*r3 eq 1/2*(1-AL)*r1;
+  // Hence if I contains a constituent which is a trivial module, then it contains <r1,r2> also
+  
+  // So no subideals unless possibly char = 5 AND zt = 1
+end for;
+
+// This quotient is also of Monster type and is 6A(2/3,−1/3)^x
+
+// ====================================================================================
+//
+// GF(5) and al = 2/3 = -1 = -2 + zeta, where zt = 1 is a square root of 6 = 1
+//
+//
+A, gen, frob:= M6A(GF(5)!2/3);
+AL := GF(5)!2/3;
+assert AL eq -1;
+zt := GF(5)!1; // when compared to the -2 \pm \sqrt{6} case
+
+// the Radical is 5 dim
+assert Dimension(Nullspace(frob)) eq 5;
 R := ideal<A| [A!x : x in Basis(Nullspace(frob))]>;
 
-B, quo := quo<A|R>;
+// Inside R we have the annihilator still
+assert A.8 in Annihilator(A);
+assert Dimension(Annihilator(A)) eq 1;
 
-// We identify the quotient
-AL := -2-r;
+r1 := A.1-A.3 + A.4 - A.6;
+r2 := A.1-A.5 + A.4 - A.2;
+r3 := A.1+A.3+A.5 - (A.2+A.4+A.6);
+r4 := A.1+A.3+A.5+A.2+A.4+A.6 -3*AL*A.7 +2*(AL-1)*A.8;
 
-z1 := B.4;
-z2 := 1/5*(-2*r + 2)*(B.1-B.2+B.3) - 1/5*(r + 4)*B.4;
-e := 2*B.1-AL*z1 -(AL+1)*z2;
-f := 2*B.2-AL*z1 -(AL+1)*z2;
-assert IsIndependent([z1,z2,e,f]);
+r5 := A.8;
+
+assert forall{ u : u in [r1,r2,r3,r4,r5] | u in R};
+assert IsIndependent([r1,r2,r3,r4,r5]);
+// So r1, .., r5 is a basis for R
+
+// As zt \neq -1, the subideal analysis is the same as for al = -2 \pm \sqrt{6}
+
+// < r1, r2, r3, r4 > and <z> are disjoint and so are complements.
+
+// It remains to check the quotients
+
+// The quotient by r5 is still 6A(2/3,−1/3)^x
+
+B, quo := quo<A|r1,r2,r3,r4>;
+
+z1 := A.7@quo;
+n := 1/2*A.8@quo; // NB this differs by a scalar from the al = -2+rt version
+e := 2/3*(A.1-A.3 + A.1-A.5)@quo;
+f := 2/3*(-(A.1 - A.3) + 2*(A.1-A.5) )@quo;
+
+assert IsIndependent([z1,n,e,f]);
 
 // check the structure constants wrt this basis
 assert z1^2 eq z1;
-assert z2^2 eq z2;
-assert z1*z2 eq 0;
+assert n^2 eq 0;
+assert z1*n eq 0;
 
 assert e*z1 eq AL*e;
 assert f*z1 eq AL*f;
-assert e*z2 eq (1-AL)*e;
-assert f*z2 eq (1-AL)*f;
+assert e*n eq 0;
+assert f*n eq 0;
 
-z := AL*(AL-2)*z1 + (AL-1)*(AL+1)*z2;
+z := 3*z1 - 2*n;
 assert e^2 eq -z;
 assert f^2 eq -z;
 assert e*f eq -1/2*z;
+// So this is widehat(S)(b,-1)^\circ \cong IY_3(-1,1/2,1/2)
 
-// So B is isomorphic to the split spin factor algebra with mu = 1/2 - this is IY_3(-2-r, 1/2, 1/2)
+// NB that the quotient by R corresponds to the quotient of B by the nilpotent ideal <n> = <z@quo>
 
-// Need to check for sub ideals of R
+// NB also that B is also isomorphic as an algebra to 3A(4,3) in char 5.
+assert HasMonsterFusionLaw(B.1: fusion_values:=[4,3]);
+assert Dimension(Eigenspace(B.1,0)) eq 1;
+assert Dimension(Eigenspace(B.1,4)) eq 1;
+assert Dimension(Eigenspace(B.1,3)) eq 1;
+// So B is of Monster type.  It has a 1-dim annihilator
 
-r1 := A.1-A.3 + A.4 - A.6;
-r2 := A.3-A.5 - (A.2 - A.6);
-r3 := A.1+A.3+A.5 + 1/2*(6+3*r)*A.7 -(r+3)*A.8;
-r4 := A.2+A.4+A.6 + 1/2*(6+3*r)*A.7 -(r+3)*A.8;
+bas := [B.1,B.3,A.5@quo,3*r5@quo];
+BB := ChangeBasis(B, bas);
 
-assert forall{ v : v in [r1,r2,r3,r4] | v in R};
-assert IsIndependent([r1,r2,r3,r4]);
-
-t1 := MiyamotoInvolution(A.1);
-t2 := MiyamotoInvolution(A.2);
-G := sub<GL(8,F)|t1,t2>;
-M := GModule(G);
-// <r1, r2> is a 2-dim irreducible module
-// r3 and r4 both generate trivial modules
-// the module structure of R is 2 + 1 + 1
-
-// check whether there are 1 dim ideal of 1+1 submodule
-assert r1*r3 eq 1/2*(11*r + 27)*r1;
-assert r1*r4 eq 1/2*(11*r + 27)*r1;
-
-assert r2*r3 eq 1/2*(11*r + 27)*r2;
-assert r2*r4 eq 1/2*(11*r + 27)*r2;
-// NB 11*r+27 \neq 0 as char \neq 3
-assert 27^2 - 11^2*6 eq 3;
-
-// For a 1-dim module, require no component of r1, or r2 in the above.  So only possible is
-u := r3-r4;
-
-// However, 
-assert 6*A.1*u eq (r+3)*(2*r1+r2+r4) - (2*r+3)*r3;
-// NB r \eq -3, otherwise 6 = 9, but char \neq 3
-assert ideal<A|u> eq R;
-
-// Therefore no 1-dim subideals.  And if a subideal contains a constituent of < r3,r4>, then it also contains <r1,r2>
-
-// Only other option is a 2-dim ideal spanned by r1, r2
-
-assert 6*r1^2 eq 2*(-r-3)*r1 + 4*(-r-3)*r2 + (-r+6)*(r3+r4);
-// NB r \neq 6 as this requires 6 = r^2 = 36 and so 30 = 0 and hence char is 2,3,5, a contradiction
-// Hence an ideal containg r1 always contains a scalar multiple of r3+r4
-assert  ideal<A|r1,r2> eq R;
-
-// So no subideals.
-
-// ---------------------------------
-
-A, gen, frob := M6A(-2+r);
-
-assert Dimension(Nullspace(frob)) eq 4;
-
-// Add in Gaussian Ellimination  **********************************
+assert [[ Eltseq(e) : e in r] : r in BasisProducts(BB)] eq [[ Eltseq(e) : e in r] : r in BasisProducts(M3A(GF(5)!4, GF(5)!3))];
+// So the quotient is equal to 3A, however, the 6 axes are all distinct.
 
 
+// ====================================================================
+//
+// Char 5 and al = 2 = 4/7 = -2 -zeta, where zeta = -1 is a sqrt of 6=1
+//
+//
+A, gen, frob := M6A(GF(5)!4/7);
+AL := GF(5)!4/7;
+assert AL eq 2;
+zt := -GF(5)!1; // when compared to the -2 \pm \sqrt{6} case
+
+// Need to edit - error somewhere!!!!!!!!!
+
+assert Dimension(Nullspace(frob)) eq 7;
 R := ideal<A| [A!x : x in Basis(Nullspace(frob))]>;
 
-B, quo := quo<A|R>;
+u1 := A.1 - A.3;
+u2 := A.1 - A.5;
 
-// Again, B \cong IY_3(r-2,1/2,1/2)
-AL := -2+r;
+u3 := A.4 - A.6;
+u4 := A.4 - A.2;
 
-z1 := B.4;
-z2 := 1/5*(2*r + 2)*(B.1-B.2+B.3) - 1/5*(-r + 4)*B.4;
-e := 2*B.1-AL*z1 -(AL+1)*z2;
-f := 2*B.2-AL*z1 -(AL+1)*z2;
+r3 := A.1+A.3+A.5 - (A.2+A.4+A.6);
+r4 := A.1+A.3+A.5+A.2+A.4+A.6 -3*AL*A.7 +2*(AL-1)*A.8;
 
-assert z1^2 eq z1;
-assert z2^2 eq z2;
-assert z1*z2 eq 0;
+r5 := A.8;
 
-assert e*z1 eq AL*e;
-assert f*z1 eq AL*f;
-assert e*z2 eq (1-AL)*e;
-assert f*z2 eq (1-AL)*f;
+assert forall{ v : v in [u1,u2,u3,u4,r3,r4,r5] | v in R};
+assert IsIndependent([u1,u2,u3,u4,r3,r4,r5]);
 
-z := AL*(AL-2)*z1 + (AL-1)*(AL+1)*z2;
-assert e^2 eq -z;
-assert f^2 eq -z;
-assert e*f eq -1/2*z;
+// Module structure is now 2+2+1+1+1
 
-// Need to check for sub ideals of R
+// We have ideals from above:
+// from al = 4/7, have < u1,u2,u3,u4,r5 >
+// from al = -2+zt have <u1+u3, u2+u4, r3, r4>
 
-r1 := A.1-A.3 + A.4 - A.6;
-r2 := A.3-A.5 - (A.2 - A.6);
-r3 := A.1+A.3+A.5 + 1/2*(6-3*r)*A.7 + (r-3)*A.8;
-r4 := A.2+A.4+A.6 + 1/2*(6-3*r)*A.7 + (r-3)*A.8;
+U47 := ideal<A | u1, u2, u3, u4, r5>;
+Uzt := ideal<A | u1+u3, u2+u4, r3, r4>;
 
-assert forall{ v : v in [r1,r2,r3,r4] | v in R};
-assert IsIndependent([r1,r2,r3,r4]);
+assert Dimension(U47) eq 5;
+assert Dimension(Uzt) eq 4;
 
-t1 := MiyamotoInvolution(A.1);
-t2 := MiyamotoInvolution(A.2);
-G := sub<GL(8,F)|t1,t2>;
-M := GModule(G);
-// the module structure of R is 2 + 1 + 1
+// These intersect in an ideal
+int := U47 meet Uzt;
+assert int eq ideal<A | u1+u3, u2+u4>;
+assert Dimension(int) eq 2;
 
-// Any ideal with a non-trivial Miy action is all of R
-assert  ideal<A|r1,r2> eq R;
+// NB in the subideal analysis of al = -2+zt, only this 2-dim ideal is a possible subideal (when zt = -1 in char 5).
+// NB in the subideal analysis for al = 4/7, possible subideals are the above intersection only.
 
-// check whether there are 1 dim ideal of 1+1 submodule
-assert A.1*r3 eq 1/2*(-2*r + 5)*(2*r1+r2) + 1/2*(3*r - 7)*r3 + 1/2*(-2*r + 5)*r4;
-assert A.1*r4 eq 1/6*(-5*r + 12)*(2*r1 + r2) + 1/6*(7*r - 18)*r3 + 1/6*(-5*r + 12)*r4;
+B, quo := quo<A|int>;
 
-// For a 1-dim module, require no component of r1, or r2 in the above.  So only possible is
-u := 1/6*(-5*r + 12)*r3 - 1/2*(-2*r + 5)*r4;
-assert IsZero(A.1*u);
-// However
-assert ideal<A|u> eq R;
-// So no subideals.
+assert sub<B | A.1@quo, A.2@quo> eq B;
+assert HasMonsterFusionLaw(A.1@quo : fusion_values:= [GF(5) | 2, 1/2]);
+
+// This is a quotient of the Highwater algebra
+assert forall{ i : i in [1..4] | A.i@quo eq B.i};
+assert (A.1-A.2+A.4-A.5)@quo eq 0;
+// so this is the minimal relation on the axes
+
+// This quotient is isomorphic to a quotient of the highwater algebra by the identity on the axes generated by
+// a_1 - a_2 + a_4 - a_5
+HW, gensHW, frobHW := HighwaterQuotient([GF(5)| 1,-1,0,1,-1]);
+
+sg1 := A.1@quo*A.2@quo - 1/2*(A.1+A.2)@quo;
+sg2 := A.1@quo*A.3@quo - 1/2*(A.1+A.3)@quo;
+
+bas := [ A.i@quo : i in [1..4]] cat [sg1, sg2];
+assert IsIndependent(bas);
+
+BB := ChangeBasis(B, bas);
+
+assert [ [ Eltseq(r) : r in R] : R in BasisProducts(BB)] eq [[ Eltseq(r) : r in R] : R in BasisProducts(HW)];
+// hence they are indeed isomorphic
+
+
+// Here 3C(4/7) = 3C(2)
+// it has a 2-dim ideal, with a quotient 1A.  This agrees with the quotient A/R
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

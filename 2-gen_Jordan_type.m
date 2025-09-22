@@ -6,6 +6,28 @@ The 2-generated algebras of Jordan type.
 QQ := Rationals();
 // ------------------------------------
 //
+// 2B
+//
+// ------------------------------------
+intrinsic M2B(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
+  {
+  The algebra 2B, with generators and its Frobenius form.  Optional paramenter base_field of the base field; default is the rationals.
+  }
+  G := sub<Sym(2) | (1,2)>;
+  
+  V := VectorSpace(base_field, 2);
+  S := [<1,1,V.1>, <1,2,V!0>];
+  
+  mult := BuildSymmetricMultiplication(S, G);
+  A := Algebra<base_field, 2 | mult>;
+  
+  T := [ <1,1,base_field!1>, <1,2,0>];
+  frob := BuildSymmetricBilinearForm(T, G);
+
+  return A, {@ A.1, A.2 @}, frob;
+end intrinsic;
+// ------------------------------------
+//
 //           Matsuo algebras
 //
 // ------------------------------------

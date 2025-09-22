@@ -342,7 +342,7 @@ intrinsic VI1(:base_ring:=QQ) -> AlgGen, SetIndx, AlgMatElt
                 
   frob := BuildSymmetricBilinearForm(T, G);
   
-  return A, {@ A.1, A.2@};
+  return A, {@ A.1, A.2@}, frob;
 end intrinsic;
 
 // --------------------------

@@ -53,11 +53,12 @@ assert Dimension(B) eq 3;
 assert Eigenvalues(B!x) eq {<1,1>, <0,1>, <1/2,1>};
 assert Eigenvalues(B!y) eq {<1,1>, <0,1>, <1/2,1>};
 
-so, id := HasOne(B);
+so, id_B := HasOne(B);
 assert so;
-assert id eq B![0,0,4/(bt-1/2)];
+assert id eq id_B;
+assert id_B eq B![0,0,4/(bt-1/2)];
 // Need bt not 1/2 to have an identity
-assert B.1*B.2-(B.1+B.2)/2 eq (bt-1/2)*id;
+assert B.1*B.2-(B.1+B.2)/2 eq (bt-1/2)*id_B;
 // so x,y generate S(dl) where dl = 8(bt-1/2) + 2
 
 // Now check for ideals
@@ -148,10 +149,10 @@ assert u*u eq 8*A.5;
 A, gen, frob := M4A();
 F<bt> := BaseRing(A);
 
-I := IdempotentIdeal(A);
+I, AP := IdempotentIdeal(A);    // Also get AP, the algebra over the polynomial ring 
 assert Dimension(I) eq 1;
 
-prim := PrimaryDecomposition(I);    
+prim := PrimaryDecomposition(I);
 
 assert #prim eq 15;
 prim0 := [ J : J in prim | Dimension(J) eq 0];
@@ -160,10 +161,39 @@ prim1 := [ J : J in prim | Dimension(J) ne 0];
 assert #prim1 eq 1;
 J := prim1[1];
 
-// The equations you get from requiring the coefficients in the double axis subalgebra to be the idempotents are
-J0 := ideal<J | J.1-J.3, J.2-J.4, J.1+J.2+(bt-1/2)/2*J.5-1, 8*J.1*J.2+(bt-1/2)/4*J.5^2-J.5>;
-assert J0 eq J;
-// So the 1-dim ideal is exactly the idempotents in the double axis subalgebra, which is isomorphic to S(dl)
+// The ideal J is just the idempotents in the double axis subalgebra which is a Spin factor S(dl)
+
+/*
+idempotents in a spin factor algebra < 1 > \oplus V, where V = < e, f > have the form
+
+   x = 1/2(1 + u),     where b(u,u) = 2
+ 
+Let u = lm e + mu f \in V.  NB the form is b(e,e) = 2 = b(f,f) and b(e,f) = dl.
+For b(u,u) = 2, we require
+
+lm^2 + dl*lm*mu + mu^2 -1 = 0
+
+Where dl = 8*(bt-1/2)+2, the parameter in S(dl) is found above by looking at the subalgebra the double axes generate.
+
+Now writing x in the basis of the algebra, we get:
+
+x = lm*(A.1+A.3) + mu*(A.2 + A.4) + 1/2(1-lm-mu)*id
+  = lm*(A.1+A.3) + mu*(A.2 + A.4) + 1/2(1-lm-mu)*4/(bt-1/2)*A.5
+*/
+// Get the polynomial ring
+P := BaseRing(AP);   
+
+assert J eq ideal<P | P.1-P.3, P.2-P.4, P.5 - 1/2*(1-P.1-P.2)*4/(bt-1/2), P.1^2 + (8*(bt-1/2)+2)*P.1*P.2 + P.2^2 -1>;
+
+assert (A.1-A.3)*(A.1+A.3) eq A.1-A.3;
+assert (A.1-A.3)*(A.2+A.4) eq 2*bt*(A.1-A.3); 
+// Hence z*(A.1-A.3) is some scalar multiple of A.1-A.3
+// By symmetry same is true of A.2-A.4
+// Hence these are both eigenvectors for z
+// Note that <A.1-A.3,A.2-A.4> is precisely the -ve graded eigenspace for the double axis, x.
+// And S(dl) is a complement to this and is the +ve graded part of the fusion law for x.
+// Hence the fusion law for z is also graded as they are the same graded pieces as for x.
+// But in general z will have 5 eigenvalues, not 4.
 
 // For the idempotents in the 0-dim ideal, we want to classify these up to automorphism
 
@@ -181,8 +211,8 @@ assert Order(Miy) eq 4;
 assert Order(G) eq 8;
 
 FCl := AlgebraicClosure(F);
-rt1 := Sqrt(-FCl!(bt-1/2) );
-rt2 := Sqrt(FCl!bt);
+rt1 := Sqrt(FCl!-bt*(bt-1/2));
+rt2 := Sqrt(FCl!bt/(bt+3/2) );
 rt3 := Sqrt(FCl!(bt+3/2) );
 
 ACl := ChangeRing(A, FCl);
@@ -208,14 +238,21 @@ so, id := HasOne(ACl);
 assert so;
 assert id eq ACl![0,0,0,0,4/(bt-1/2)];
 
+assert InnerProduct(id*frobCl, id) eq 4;
+
 // The two orbits of length 2
-v1 := id/2 + rt1*rt2/bt/(bt-1/2)*( (1/4-bt)*(ACl.1+ACl.3) + 1/4*(ACl.2+ACl.4) + 2*ACl.5);
+v1 := id/2 + 1/rt1*( (1/4-bt)*(ACl.1+ACl.3) + 1/4*(ACl.2+ACl.4) + 2*ACl.5);
+
+assert IsIdempotent(v1);
+assert InnerProduct(v1*frobCl, v1) eq 2;
 
 evals, espaces, FL := IdentifyFusionLaw(v1);
-assert HasAlmostMonsterFusionLaw(v1: fusion_values:=[ 1/2, 1/2 -2*rt1*rt2]);
+
+// Choice of roots changes the 
+assert HasAlmostMonsterFusionLaw(v1: fusion_values:=[ 1/2, 1/2 +2*rt1]);
 // it is never of Monster type
 
-assert { t[1] : t in Eigenvalues(v1)} eq { 1, 0, 1/2, 1/2-2*rt1*rt2};
+assert { t[1] : t in Eigenvalues(v1)} eq { 1, 0, 1/2, 1/2+2*rt1};
 // Fusion law is graded
 Gr, gr := Grading(FL);
 assert Order(Gr) eq 2;
@@ -225,17 +262,23 @@ assert MiyamotoInvolution(v1) eq t1;
 assert exists(o1){ o : o in orbs | v1 in o};
 assert #o1 eq 2;
 
-phi_FCl := ChangeRing(phi, FCl);
-assert v1*phi_FCl in o1;
 assert id - v1 notin o1;
-
 assert exists(o1_pair){ o : o in orbs | id-v1 in o};
+
+assert InnerProduct((id-v1)*frobCl, id-v1) eq 2;
+assert HasAlmostMonsterFusionLaw(id-v1: fusion_values:=[ 1/2, 1/2 -2*rt1]);
+assert MiyamotoInvolution(id-v1) eq t1;
+
 
 // The orbits of length 4
 assert {@ ACl.i : i in [1..4] @} in orbs;
 assert {@ id - ACl.i : i in [1..4] @} in orbs;
 
-v2 := id/2 + 1/(2*rt3)*( (1/(2*rt2)-1)*(ACl.1+ACl.2) + (1/(2*rt2)+1)*(ACl.3+ACl.4) - 4*(bt+1/2)/bt/(bt-1/2)*rt2*ACl.5);  
+v2 := id/2 + 1/4/bt*rt2*ACl![1,1,1,1,0] - 1/2/rt3*ACl![1,1,-1,-1,0] -2*(2*bt+1)/bt/(2*bt-1)*rt2*ACl.5;
+
+assert IsIdempotent(v2);
+assert InnerProduct(v2*frobCl, v2) eq 2 -2*rt2;
+
 assert #Eigenvalues(v2) eq 5;
 _, _, FL := IdentifyFusionLaw(v2);
 Gr, gr := Grading(FL);
@@ -245,11 +288,12 @@ assert MiyamotoInvolution(v2) eq phi;
 assert exists(o2){ o : o in orbs | v2 in o};
 assert #o2 eq 4;
 
-phi_FCl := ChangeRing(phi, FCl);
-assert v2*phi_FCl in o2;
 assert id - v2 notin o2;
-
 assert exists(o2_pair){ o : o in orbs | id-v2 in o};
+
+assert IsIdempotent(id-v2);
+assert InnerProduct((id-v2)*frobCl,(id- v2)) eq 2 +2*rt2;
+
 
 
 // There are nilpotent elements too
@@ -452,10 +496,23 @@ assert {* #o : o in orbs *} eq {* 1^^4, 2^^2, 4^^6 *};
 // There is the zero vector, and A.5, id and id-A.5
 so, id := HasOne(A);
 
+
 assert HasJordanFusionLaw(A.5: fusion_value:=al);
 assert Dimension(Eigenspace(A.5, 0)) eq 2;
 assert Dimension(Eigenspace(A.5, al)) eq 2;
-assert MiyamotoInvolution(A.5) eq f;
+assert MiyamotoInvolution(A.5) eq f; //does not hold instead eq t1*t2
+
+assert HasJordanFusionLaw(id-A.5: fusion_value:=1-al);
+assert Dimension(Eigenspace(id-A.5, 1)) eq 2;
+assert Dimension(Eigenspace(id-A.5, 1-al)) eq 2;
+assert MiyamotoInvolution(A.5) eq t1*t2;
+
+assert InnerProduct(id*frob, id) eq (-al + 5)/(al + 1);
+assert InnerProduct(A.5*frob, A.5) eq 1;
+assert InnerProduct((id-A.5)*frob, (id-A.5)) eq (-2*al + 4)/(al + 1);
+
+
+
 
 // Orbits of size 2
 // Each 3C subalgebra has its own identity id_3C and then id_3C - A.5
@@ -465,6 +522,7 @@ assert HasJordanFusionLaw(id_3C: fusion_value:=al);
 assert Dimension(Eigenspace(id_3C, 1)) eq 3;
 assert MiyamotoInvolution(id_3C) eq t1;
 
+assert id - id_3C eq (id_3C)*ChangeRing(f, FCl) -A.5;
 assert IsIdempotent(id_3C-A.5);
 assert HasJordanFusionLaw(id_3C-A.5: fusion_value:=1-al);
 assert Dimension(Eigenspace(id_3C-A.5, 0)) eq 3;
@@ -498,11 +556,13 @@ A, gen, frob := M4B(-1);
 t1 := MiyamotoInvolution(A.1);
 t2 := MiyamotoInvolution(A.2);
 
-f := PermutationMatrix(F, [2,1,4,3,5]);
+f := PermutationMatrix(QQ, [2,1,4,3,5]);
 G := sub<GL(5,QQ) | t1,t2,f>;
 
-I := IdempotentIdeal(A);
+I, AP := IdempotentIdeal(A);
 assert Dimension(I) eq 1;
+
+P := BaseRing(AP);
 
 prim := PrimaryDecomposition(I);    
 assert #prim eq 3;
@@ -511,7 +571,8 @@ prim0 := [ J : J in prim | Dimension(J) eq 0];
 prim1 := [ J : J in prim | Dimension(J) ne 0];
 
 // There are two idempotents in the dim 0 part
-assert Set(&cat [ Variety(J, FCl) : J in prim0 ]) eq {<0,0,0,0,0>, <0,0,0,0,1>};
+Qbar := AlgebraicClosure(QQ);
+assert Set(&cat [ Variety(J, Qbar) : J in prim0 ]) eq {<0,0,0,0,0>, <0,0,0,0,1>};
 
 assert #prim1 eq 1;
 // Don't know about this part!!!!!!!
@@ -727,6 +788,13 @@ idems := FindAllIdempotents(A);
 Simplify(FCl);
 Prune(FCl);
 
+t1 := MiyamotoInvolution(A.1);
+t2 := MiyamotoInvolution(A.2);
+
+f := PermutationMatrix(F, [2,1,4,3,5]);
+G := sub<GL(5,F) | t1,t2,f>;
+assert Order(G) eq 8;
+
 GCl := ChangeRing(G, FCl);
 orbs := {@ {@ A!u : u in Orbit(GCl, Vector(v))@} : v in idems @};
 Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
@@ -767,7 +835,7 @@ F<bt> := BaseRing(A);
 // identity
 so, id := HasOne(A);
 assert so;
-assert id eq A![-1/2,-1/2,-1/2,-1/2,(6*bt-1)/(4*bt)]/(2*bt-1);
+assert id eq A![-1/2,-1/2,-1/2,-1/2,(6*bt-1)]/(2*bt-1);
 // Since bt \neq 1/2, algebra always has an identity
 
 // Subalgebras
@@ -777,10 +845,10 @@ assert Eigenvalues(B!A.1) eq {<1,1>, <0,1>, <1/2,1>};
 assert Eigenvalues(B!A.3) eq {<1,1>, <0,1>, <1/2,1>};
 so, id_B := HasOne(B);
 assert so;
-assert id_B eq (-1/2*(A.1+A.3) + (4*bt-1)/(4*bt)*A.5)/(2*bt-1);
+assert id_B eq (-1/2*(A.1+A.3) + (4*bt-1)*A.5)/(2*bt-1);
 // Since bt \neq 1/2, B has an identity
 assert A.1*A.3-(A.1+A.3)/2 eq 4*bt*(2*bt-1)*id_B;
-// so dl = 64bt(2bt-1) + 2 and <<a_0, a_2>> = S(dl)
+// so dl = 32bt(2bt-1) + 2 and <<a_0, a_2>> = S(dl)
 
 int := B meet sub<A|A.2,A.4>;
 assert Dimension(int) eq 1;
@@ -829,14 +897,18 @@ assert #prim0 eq 4;
 
 assert {* VarietySizeOverAlgebraicClosure(J) : J in prim0 *} eq {* 1^^4 *};
 vars := {@ A![ e : e in t] : t in Variety(J), J in prim0 @};
-x := 1/(4*bt)*A.5;
-so, id := HasOne(A);
-assert vars eq {@ A!0, x, id, id-x @};
 
-assert HasJordanFusionLaw(x: fusion_value:=1/2);
-assert Dimension(Eigenspace(x, 0)) eq 2;
-assert Dimension(Eigenspace(x, 1/2)) eq 2;
+assert IsIdempotent(A.5);
+so, id := HasOne(A);
+assert vars eq {@ A!0, A.5, id, id-A.5 @};
+
+assert HasJordanFusionLaw(A.5: fusion_value:=1/2);
+assert Dimension(Eigenspace(A.5, 0)) eq 2;
+assert Dimension(Eigenspace(A.5, 1/2)) eq 2;
 assert MiyamotoInvolution(x) eq t1*t2;
+
+assert InnerProduct(id*frob,id) eq 3;
+assert InnerProduct((id-A.5)*frob,id-A.5) eq 2;
 
 
 assert #prim1 eq 4;
@@ -958,7 +1030,7 @@ FCl := AlgebraicClosure(F);
 // Need to add roots
 r := Sqrt(FCl!(al^2+2*al-2)/(al^4-2*al^3+4*al-2));
 s := Sqrt(FCl!(2*al - 1)/(al^4 - 2*al^3 + 4*al - 2));
-
+// These are the same roots as for 4B with the transformation \al \mapsto 1-\al applied.
 
 A := ChangeRing(A, FCl);
 frob := ChangeRing(frob, FCl);
@@ -974,6 +1046,68 @@ assert #orbs eq 12;
 assert {* #o : o in orbs *} eq {* 1^^4, 2^^2, 4^^6 *};
 
 // Same as for 4B
+
+// ************************************************************************
+
+// WARNING: if al = 2, then the ideal is 1-dimensional
+// How to notice this???????????????
+
+
+
+// Orbits of size 1
+// need al \neq -1 ????????????
+// There is the zero vector, and A.5, id and id-A.5
+so, id := HasOne(A);
+
+
+assert HasJordanFusionLaw(A.5: fusion_value:=1-al);
+assert Dimension(Eigenspace(A.5, 0)) eq 2;
+assert Dimension(Eigenspace(A.5, 1-al)) eq 2;
+assert MiyamotoInvolution(A.5) eq t1*t2;
+
+assert HasJordanFusionLaw(id-A.5: fusion_value:=al);
+assert Dimension(Eigenspace(id-A.5, 1)) eq 2;
+assert Dimension(Eigenspace(id-A.5, al)) eq 2;
+assert MiyamotoInvolution(id-A.5) eq t1*t2;
+
+assert InnerProduct(id*frob, id) eq (al + 4)/(al + 1);
+assert InnerProduct(A.5*frob, A.5) eq (-al + 2)/(al + 1);
+assert InnerProduct((id-A.5)*frob, (id-A.5)) eq 2;
+
+
+
+
+// Orbits of size 2
+// Each 3C subalgebra has its own identity id_3C and then id_3C - A.5
+id_3C := 1/(al)*(A.1+A.3-A.5);
+assert IsIdempotent(id_3C);
+assert HasJordanFusionLaw(id_3C: fusion_value:=1-al);
+assert Dimension(Eigenspace(id_3C, 1)) eq 3;
+assert MiyamotoInvolution(id_3C) eq t1;
+
+assert IsIdempotent(id_3C-A.5);
+assert HasJordanFusionLaw(id_3C-A.5: fusion_value:=al);
+assert Dimension(Eigenspace(id_3C-A.5, 0)) eq 3;
+assert MiyamotoInvolution(id_3C-A.5) eq f*t1*f;
+
+// orbits of size 4
+// the axes, id - axes
+// there is also the orbit of x := id_3C - A.1 and id - x
+x := id_3C - A.1;
+assert IsIdempotent(x);
+assert HasMonsterFusionLaw(x: fusion_values:=[1-al, 1-al-bt]);
+assert Dimension(Eigenspace(x, 0)) eq 2;
+assert MiyamotoInvolution(x) eq t1;
+
+// Final two orbits: y and id-y
+y := id/2 + r/2/(al)*A![1-al, 1-al, 1-al, 1-al, al^2-2] + s/2*A![1,1,-1,-1,0];
+assert IsIdempotent(y);
+evals, espace, FL := IdentifyFusionLaw(y);
+assert #FL eq 5;
+assert Order(Grading(FL)) eq 2;
+assert MiyamotoInvolution(y) eq f;
+
+
 
 // ***********************************************
 

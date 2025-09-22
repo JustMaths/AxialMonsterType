@@ -111,7 +111,7 @@ B := sub<AY| AY.1,AY.3>;
 assert Dimension(B) eq 3;
 so, id_B := HasOne(B);
 assert so;
-assert id_B eq
+assert id_B eq 1/(al+1)*( 2*(AY.1+AY.3) + (al-1)/al*(AY.2+AY.4) -4/al/(al+1)*AY.5);
 
 c := AY.1+AY.3 - 2/al*AY.1*AY.3;
 w := id_B - c;
@@ -224,15 +224,43 @@ assert HasSameStructureConstants(A, AY_new);
 //
 // ---------------------
 A, gen, frob := M6J();
-AY, _, frobY := VI1();
+// This is a (2bt, bt) algebra
 
+AY, _, frobY := VI1();
+// Yabe writes this as an (al, al/2) algebra
+F<al> := BaseRing(A);
+bt := al/2;
+
+u := AY.1+AY.4 - 2/al*AY.1*AY.4;
+w := 2*(AY.1+AY.2) - 2/bt*AY.1*AY.2;
+
+bas := [AY.i : i in [1..6]] cat [u, w];
+AY_new := ChangeBasis(AY, bas);
+
+// There is a change from (al, al/2) to (2bt, bt)
+
+phi := hom<F->F | [2*al]>;
+assert Determinant(Matrix(bas))@phi eq -2/al^2;
+
+Astr := [ [ Eltseq(v) : v in R] : R in BasisProducts(A)];
+AY_newstr := [ [ Eltseq(v)@phi : v in R] : R in BasisProducts(AY_new)];
+
+assert Astr eq AY_newstr;
 
 // ---------------------
 //
 // 6Y
 //
 // ---------------------
+A, gen, frob := M6Y();
+AY, _, frobY := IV3();
 
+bas := [AY.1, AY.3, AY.2+AY.3-AY.4, -AY.3+AY.4, AY.5];
+AY_new := ChangeBasis(AY, bas);
+
+assert Determinant(Matrix(bas)) eq -1;
+
+assert HasSameStructureConstants(A, AY_new);
 
 // ---------------------
 //
@@ -246,5 +274,9 @@ AY, _, frobY := VI1();
 // IY5
 //
 // ---------------------
+// None
+A, gen, frob := IY5();
+AY, _, frobY := V2();
 
+assert HasSameStructureConstants(A, AY);
 

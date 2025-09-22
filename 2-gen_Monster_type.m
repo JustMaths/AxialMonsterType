@@ -11,7 +11,7 @@ J. McInroy, S. Shpectorov, From forbidden configurations to a classification of 
 rather than Yabe's notation.  We will also use bases from the above paper, rather than bases given by Yabe for several of the algebras.
 
 */
-import "Utilities_for_algebra_creation.m": ZZ, QQ, MakeSymmetric;
+import "Utilities_for_algebra_creation.m": ZZ, QQ;
 // --------------------------------------------
 //
 //          Algebras on X_3 axet
@@ -217,16 +217,18 @@ intrinsic M4Y_bt(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   G := sub<Sym(5) | (2,4), (1,3), (1,2)(3,4)>;
   
   V := VectorSpace(F, 5);
-  S := [<1,1,V.1>, <1,2, bt/2*V![1,1,-1,-1,8*bt]>, <1,3, (1-4*bt)/2*(V.1+V.3)+4*bt*(4*bt-1)*V.5>,
-        <1,5, bt*V.1-bt*V.3+8*bt^2*V.5>, <5,5, V.5>];
+  S := [<1,1,V.1>, <1,2, bt/2*V![1,1,-1,-1,8*bt]>, <1,3, (1-4*bt)/2*(V.1+V.3 -8*bt*V.5)>,
+        <1,5, 1/4*(V.1-V.3)+2*bt*V.5>, <5,5, V.5>];
   
-  S := [<1,1,V.1>, <1,2, bt/2*V![1,1,-1,-1,2]>, <1,3, (1-4*bt)/2*(V.1+V.3)+(4*bt-1)*V.5>,
-        <1,5, bt*V.1-bt*V.3+2*bt*V.5>, <5,5, 4*bt*V.5>];
+  //S := [<1,1,V.1>, <1,2, bt/2*V![1,1,-1,-1,2]>, <1,3, (1-4*bt)/2*(V.1+V.3)+(4*bt-1)*V.5>,
+  //      <1,5, bt*V.1-bt*V.3+2*bt*V.5>, <5,5, 4*bt*V.5>];
   
   mult := BuildSymmetricMultiplication(S, G);
   A := Algebra<F, 5 | mult>;
   
-  T := [ <1,1,F!1>, <1,2,4*bt^2>, <1,3,(4*bt-1)^2>, <1,5,2*bt>, <5,5, 1>];
+  T := [ <1,1,F!1>, <1,2,4*bt^2>, <1,3,(4*bt-1)^2>, <1,5, 2*bt>, <5,5, 1>];
+  
+  //T := [ <1,1,F!1>, <1,2,4*bt^2>, <1,3,(4*bt-1)^2>, <1,5,8*bt^2>, <5,5, 16*bt^2>];
   frob := BuildSymmetricBilinearForm(T, G);
   
   return A, {@ A.1, A.2 @}, frob;
@@ -269,7 +271,7 @@ intrinsic M4Y_al(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   mult := BuildSymmetricMultiplication(S, G);
   A := Algebra<F, 5 | mult>;
   
-  T := [ <1,1,F!1>, <1,2,-(al-2)*(al+1)/4>, <1,3,al/2>, <1,5,1-al/2>, <5,5, (2-al)/(al+1)>];
+  T := [ <1,1,F!1>, <1,2,(2-al)*(al+1)/4>, <1,3,al/2>, <1,5,1-al/2>, <5,5, (2-al)/(al+1)>];
   frob := BuildSymmetricBilinearForm(T, G);
   
   return A, {@ A.1, A.2 @}, frob;
@@ -491,6 +493,7 @@ intrinsic IY3(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   TO DO
   }
   
+
 end intrinsic;
 
 intrinsic IY3(al::RngElt, mu::RngElt) -> AlgGen, SetIndx, AlgMatElt
@@ -510,14 +513,53 @@ end intrinsic;
 
 intrinsic IY5(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
   {
-    TO DO
+  The IY_5(al, 1/2) algebra over a function field, with generators and its Frobenius form.
   }
+  require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
+  F<al> := FunctionField(base_ring);
+  bt := 1/2;
   
+  pi := (2*al-1)*(2*al-3)/32;
+  
+  V := VectorSpace(F,6);
+  mult := [[V![1,0,0,0,0,0]],
+           [V![bt, bt, 0, 0, 0, 1], V![0,1,0,0,0,0]],
+           [V![1/4, 1, -1, 1, -1/4 , 4], V![0, bt, bt, 0, 0, 1], V![0,0,1,0,0,0]],
+           [V![-1, 6, -9, 13/2, -3/2, 9 ], V![-1/4, 1+bt, -6/4, 1+bt, -1/4 , 4], V![0, 0, bt, bt, 0, 1], V![0,0,0,1,0,0]],
+           [V![3-15/2, -5+25, 5-35, -5/2+45/2, 1/2-5, 1+15], V![ -3/2, 13/2, -9, 6, -1, 9 ], V![-1/4, 1, -6/4+bt, 1, -1/4+bt , 4], V![0, 0, 0, bt, bt, 1], V![0,0,0,0,1,0]],
+           [ V![3*(2*al-1)/8, -9*(2*al-1)/8, 10*(2*al-1)/8, -5*(2*al-1)/8, (2*al-1)/8, (2*al-1)/2],
+             V![(2*al-1)/8, -2*(2*al-1)/8, (2*al-1)/8, 0, 0, (2*al-1)/2], 
+             V![0, (2*al-1)/8, -2*(2*al-1)/8, (2*al-1)/8, 0, (2*al-1)/2], 
+             V![0, 0, (2*al-1)/8, -2*(2*al-1)/8, (2*al-1)/8, (2*al-1)/2],
+             V![(2*al-1)/8, -5*(2*al-1)/8, 10*(2*al-1)/8, -9*(2*al-1)/8, 3*(2*al-1)/8, (2*al-1)/2],
+             V![ pi, -4*pi, 6*pi, -4*pi, pi, 0]]];
+
+  for i in [1..#mult] do
+    for j in [1..i-1] do
+      mult[j,i] := mult[i,j];
+    end for;
+  end for;
+  
+  A := Algebra<F, 6 | mult>;
+  
+  frob := Matrix(F, [[1,1,1,1,1,0] : i in [1..5]] cat [[0,0,0,0,0,0]]);
+  
+  return A, {@ A.1, A.2 @}, frob;  
 end intrinsic;
 
 intrinsic IY5(al::RngElt) -> AlgGen, SetIndx, AlgMatElt
   {
-    TO DO
+  The IY_5(al, 1/2) for al, with generators and its Frobenius form.
   }
-
+  F := FieldOfFractions(Parent(al));
+  require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
+  require F!al notin { F | 1, 0, 1/2}: "The value of alpha cannot be 1, 0, or 1/2.";
+    
+  A, gens, frob := IY5(:base_ring:=F);
+  
+  FF<x> := BaseRing(A);
+  phi := hom<FF->F | [al]>;
+  
+  A := ChangeRing(A, F, phi);
+  return A, {@ A.1, A.2 @}, ChangeRing(frob, F, phi);
 end intrinsic;

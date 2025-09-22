@@ -195,6 +195,18 @@ assert Dimension(ideal<AA | z1+z2+z3>) eq 3;
 assert Dimension(ideal<AA | z1-z2, z2-z3>) eq 3;
 // So no additional ideals, hence only quotient is 1A
 
+// --------------------------------------------
+
+// isomorphisms
+
+// If bt = 1/2, then it is isomorphic to IY3(al, 1/2, -1/2);
+// Can see from Yabe's definition
+
+
+
+
+
+
 // ---------------------------------------------
 
 // Look at the idempotents
@@ -219,8 +231,8 @@ idems := FindAllIdempotents(A);
 Simplify(FCl);
 Prune(FCl);
 
-G := ChangeRing(G, FCl);
-orbs := {@ {@ A!u : u in Orbit(G, Vector(v))@} : v in idems @};
+G := ChangeRing(G, FCl);  // Still remembers the order from above
+orbs := {@ {@ A!u : u in Orbit(G, Vector(v))@} : v in idems @};  // Need to have found the order for Orbit to work
 Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
 
 assert #orbs eq 8;
@@ -236,8 +248,9 @@ assert id eq -4*(2*al -1)/(al*(3*al^2 + 3*al*bt - bt - 1))*A.4;
 len_id := (9*al + bt - 5)/(3*al^2 + 3*al*bt - bt - 1);
 assert InnerProduct(id*frob, id) eq len_id;
 
+// We also have x
+x := id/2 + r*(A.1+A.2+A.3) + 2*(2*al - 1)/(al*(3*al^2 + 3*al*bt - bt - 1)) * (3*al + bt + 1)*r*A.4;
 
-x := r*(A.1+A.2+A.3) + 2*(2*al - 1)/(al*(3*al^2 + 3*al*bt - bt - 1)) * ((3*al + bt + 1)*r -1)*A.4;
 assert IsIdempotent(x);
 
 assert InnerProduct(x*frob, x) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (9*al + bt - 5) - (3*al-bt-1)^2*r);
@@ -248,24 +261,40 @@ assert Dimension(Eigenspace(x, (-3*al + bt + 1)/2*r + 1/2)) eq 2;
 evals, espace, FL := IdentifyFusionLaw(x);
 assert Order(Grading(FL)) eq 1;
 
+// Becomes Jordan type iff bt = 1/2
+// But when bt=1/2, A \cong IY_3(al,1/2,-1/2) - all idempotents are classified here.
+// This algebra has 3 axes, but is isomorphic as an algebra to IY_3(al,1/2,1/2), which has 6 axes.
+assert Vector(A.1-A.2) in espace[3] and Vector(A.2-A.3) in espace[3];
+// This gives an automorphism which swaps our known orbit 3 axes to a second set
+
 // the fourth idempotent fixed by the Miyamoto group is 1-x
 assert IsIdempotent(id-x);
-// Fusion law comes from x
 
+assert InnerProduct((id-x)*frob,id-x) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (3*al - bt - 1)^2*r +(9*al+bt-5));
+// Fusion law comes from x
 // Now consider the idempotents in the orbits orbits of size 3
 // clearly, one orbit is the axes
 // another is 1 - axes
 
 assert IsIdempotent(A.1) and IsIdempotent(id-A.1);
 
-y := x + (-3*al + bt + 1)/(2*al - 1)*r*A.1 -2^2*(3*al - bt - 1)/(3*al^2 + 3*al*bt - bt - 1)*r*A.4;
+assert InnerProduct((id-A.1)*frob, id -A.1) eq (-3*al^2 - 3*al*bt + 9*al + 2*bt - 4)/(3*al^2 + 3*al*bt - bt - 1);
+
+// another idempotent
+y := id/2 + (bt-al)/(2*al-1)*r*A.1 + r*(A.2+A.3) + 2*(4*al*bt + al - bt - 1)/(al*(3*al^2 + 3*al*bt - bt - 1))*r*A.4;
+// NB that id-y is equivalent to picking the other root -r
+
 assert IsIdempotent(y);
-assert y eq (bt-al)/(2*al-1)*r*A.1 + r*(A.2+A.3) + 2/(al*(3*al^2 + 3*al*bt - bt - 1))*( (4*al*bt + al - bt - 1)*r - (2*al - 1) )*A.4;
+
+// So if the following fails then magma has picked the other root r
+assert InnerProduct(y*frob, y) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (3*al - bt - 1)^2*r +(9*al+bt-5));
+assert InnerProduct(y*frob, y) eq InnerProduct((id-x)*frob,id-x);
 
 evals, espaces, FL := IdentifyFusionLaw(y);
 lm := (3*al - bt - 1)/2*r + 1/2;
 mu := -(2*bt-1)*(3*al-bt-1)/(4*al - 2)*r + 1/2;
 assert { e[1] : e in evals} eq {1,0,lm, mu};
+assert HasAlmostMonsterFusionLaw(y:fusion_values:=[lm,mu]);
 
 assert Order(Grading(FL)) eq 2;
 assert y*(A.2-A.3) eq mu*(A.2-A.3);
@@ -309,6 +338,14 @@ Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
 assert #orbs eq 8;
 assert {* #o : o in orbs *} eq {* 1^^4, 3^^4 *};
 
+// From above, think about r^2
+// As 2al = -al in char 3, we have a factorisation:
+assert (2*al-1)*(bt+1) eq (2*al*bt - al - bt - 1);
+
+// So r^2 now is 1/(bt+1)^2
+assert -(2*al-1)/(3*al-bt-1)/(2*al*bt-al-bt-1) eq 1/(bt+1)^2;
+
+
 // idempotents in an orbit of size 1
 // 0 is always an idempotent
 
@@ -317,6 +354,7 @@ so, id := HasOne(A);
 assert so;
 assert id eq 2*(al+1)/(al*(bt+1))*A.4;
 
+// since r = +/- 1/(bt+1), this is the same as the x above.
 x := 1/(bt+1)*(A.1+A.2+A.3);
 assert IsIdempotent(x);
 assert {e[1] : e in Eigenvalues(x)} eq {0,1};
@@ -334,14 +372,17 @@ assert not IsSemisimple(id-x);
 assert {@ A.i : i in [1..3] @} in orbs;
 assert {@ id - A.i : i in [1..3] @} in orbs;
 
-// v1 is not semisimple
-v1 := 1/(bt+1)*( (al-bt)/(al+1)*A.1 + A.2 + A.3 - A.4);
-assert not IsSemisimple(v1);
+// y from above now becomes the following in char 3
 
-assert exists(o1){o : o in orbs | v1 in o};
-assert id -v1 notin o1;
+y := 1/(bt+1)*( (al-bt)/(al+1)*A.1 + A.2 + A.3 - A.4);
 
-assert exists(o1_pair){o : o in orbs | id-v1 in o};
+// y is not semisimple
+assert not IsSemisimple(y);
+
+assert exists(o1){o : o in orbs | y in o};
+assert id - y notin o1;
+
+assert exists(o1_pair){o : o in orbs | id-y in o};
 
 
 

@@ -2,7 +2,6 @@ AttachSpec("../2-gen Monster.spec");
 AttachSpec("../../AxialTools/AxialTools.spec");
 
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////                  6A(al, (-al^2)/(4(2al-1)))
@@ -710,36 +709,12 @@ assert Determinant(frob) eq -(2*bt-1)^2*(bt-2)^5*(7*bt+1)/16;
 
 // Since al = 2*bt \neq 1, the only solutions are bt = 2, -1/7
 
-
-
-
-// Since al = 2*bt \neq 1, the only solutions are bt = 2, -1/7
-
+assert  InnerProduct(Vector(A.1*t2)*frob, Vector(A.2*t1)) eq bt;
 // Since bt neq 0, none of the entries in frob are 0 
 // The projection graph is strongly connected 
-// No Ideals conataining Axes
-
-Orbit1 := [A.1, A.3, A.5];
-Orbit2 := [A.2, A.4, A.6];
-
-t1 := MiyamotoInvolution(A.1);
-t2 := MiyamotoInvolution(A.2);
-
-assert A.1*t2 in Orbit1;
-assert A.1*t2*t1 in Orbit1;
-assert A.2*t1 in Orbit2;
-assert A.2*t1*t2 in Orbit2;
-
-assert  InnerProduct(Vector(A.1*t2)*frob, Vector(A.2*t1)) eq bt;
-
 // So there are no Ideals containing Axes.
 
-
-
-
-
-
-// can have bt-2 and bt+1/7 iff char eq 3, or 5.  Can't have char 3 as {1, bt, 2bt} if bt = 2 are not distinct.
+// can have bt=2 and bt=-1/7 iff char eq 3, or 5.  Can't have char 3 as {1, bt, 2bt} if bt = 2 are not distinct.
 // Char 5 works
 
 
@@ -752,7 +727,7 @@ assert Dimension(Nullspace(frob)) eq 1;
 
 P<lm> := PolynomialRing(Rationals());
 p := CharacteristicPolynomial(frob);
-assert p eq lm^5*(lm+3)*(lm^2 - 14*lm - 75);
+assert p eq lm*(7*lm-15)*(7*lm-9)*(7*lm-8)*(14*lm-15)^4/2^4/7^7;
 
 // lm + 3 \neq 0, but we can have (lm^2 - 14*lm - 75) iff char is 5
 // This is also when bt = 2 and bt = -1/7 coincide.
@@ -791,11 +766,19 @@ assert p eq lm^5*(lm+3)*(lm^2 - 14*lm - 75);
 assert Dimension(Nullspace(frob)) eq 5;
 R := ideal<A| [A!x : x in Basis(Nullspace(frob))]>;
 u1 := A.1-A.3;
-u3 := A.3-A.5;
-u2 := A.2-A.4;
-u4 := A.4-A.6;
+u3 := A.1-A.5;
+u2 := A.4-A.6;
+u4 := A.4-A.2;
 u5 := A.7-1/2*A.8;
 assert u1 in R and u2 in R and u3 in R and u4 in R and u5 in R;
+
+assert A.1*u5 eq -u4-u2 + 2*u5;
+
+assert A.1*u1 eq u1-u3;
+assert A.1*u2 eq 2*u2-2*u5;
+
+// So no subideals
+
 
 // The quotient is 3 dimensional
 B, quo := quo<A|R>;
@@ -940,5 +923,41 @@ B_5, quo := quo<A|I_5>;
 assert B_5.1 eq A.1@quo;
 // B_5 is 1A
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////         6Y Idempotents            //////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+load "Find idempotents.m";
+QQ := Rationals();
 
+A, gen, frob := M6Y();
 
+t1 := PermutationMatrix(QQ, [1,4,3,2,5]);
+t2 := PermutationMatrix(QQ, [3,2,1,4,5]);
+f := PermutationMatrix(QQ, [2,1,4,3,5]);
+
+G := sub<GL(5, QQ) | t1, t2, f>;
+
+I, AP := IdempotentIdeal(A);
+assert Dimension(I) eq 1;
+
+P := BaseRing(AP);
+
+prim := PrimaryDecomposition(I);
+assert #prim eq 8;
+
+prim0 := [ J : J in prim | Dimension(J) eq 0];
+prim1 := [ J : J in prim | Dimension(J) ne 0];
+
+assert {* VarietySizeOverAlgebraicClosure(J) : J in prim0 *} eq {* 1^^4 *};
+vars := {@ A![ e : e in t] : t in Variety(J), J in prim0 @};
+
+x1 := A![-2/3,1/3,1/3,0,0];
+x2 := A![1/3,-2/3,1/3,0,0];
+x3 := A![1/3,1/3,-2/3,0,0];
+
+assert HasJordanFusionLaw(x1: fusion_value:=-1);
+assert Dimension(Eigenspace(x1, 0)) eq 3;
+assert Dimension(Eigenspace(x1, -1)) eq 1;
+
+assert InnerProduct(x1*frob, x1) eq 0;
+// Same holds for x2 and x3

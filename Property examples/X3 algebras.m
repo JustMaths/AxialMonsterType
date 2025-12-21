@@ -202,9 +202,57 @@ assert Dimension(ideal<AA | z1-z2, z2-z3>) eq 3;
 // If bt = 1/2, then it is isomorphic to IY3(al, 1/2, -1/2);
 // Can see from Yabe's definition
 
+FF<AL> := FunctionField(Rationals());
+phi := hom<F->FF | [AL,1/2]>;
 
+A := ChangeRing(A, FF, phi);
 
+e := 2/3*(2*A.1-A.2-A.3);
+f := 2/3*(-A.1+2*A.2-A.3);
+z1 := -2/3*(A.1+A.2+A.3 + 4/AL*A.4);
+z2 := 2/3*(A.1+A.2+A.3 + 4/(AL+1)*A.4);
 
+assert z1^2 eq z1;
+assert z2^2 eq z2;
+assert z1*z2 eq 0;
+assert e*z1 eq AL*e;
+assert f*z1 eq AL*f;
+assert e*z2 eq (1-AL)*e;
+assert f*z2 eq (1-AL)*f;
+
+// from split spin factor paper
+z := AL*(AL-2)*z1 + (AL-1)*(AL+1)*z2;
+
+assert e^2 eq - z;
+assert f^2 eq - z;
+assert e*f eq -(-1/2)*z;
+
+// so it is isomorphic to the split spin factor algebra with mu = -1/2
+
+// if AL = -1;
+
+A := M3A(-1,1/2);
+e := 2/3*(2*A.1-A.2-A.3);
+f := 2/3*(-A.1+2*A.2-A.3);
+z1 := -2/3*(A.1+A.2+A.3 - 4*A.4);
+n := 8/3*A.4;
+
+assert z1^2 eq z1;
+assert n^2 eq 0;
+assert z1*n eq 0;
+assert e*z1 eq -e;
+assert f*z1 eq -f;
+assert e*n eq 0;
+assert f*n eq 0;
+
+// from split spin factor paper
+z := 3*z1 - 2*n;
+
+assert e^2 eq - z;
+assert f^2 eq - z;
+assert e*f eq -(-1/2)*z;
+
+// In Char 3, bt = 1/2 = -1 and 3A has no identity.  So it can't be isomorphic to IY_3(al,1/2,-1/2) as this does have an identity if al \neq -1.  Can't have al = -1 = 1/2 = bt. So not isomorphic if al = -1 either.
 
 
 // ---------------------------------------------
@@ -218,6 +266,28 @@ t1 := MiyamotoInvolution(A.1);
 t2 := MiyamotoInvolution(A.2);
 G := sub<GL(4,F) | t1,t2>;
 assert Order(G) eq 6; // Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
+
+
+// Check for any odd values of al,bt giving more idempotents
+
+II, I := IdealOfSingularPoints(A);
+
+prim := RadicalDecomposition(II);
+
+// get polynomial ring - al, bt are the last two variables
+P := Generic(II);
+assert #prim eq 14;
+
+// Can't have al = 1/2
+Good := [ J : J in prim | P.5-1/2 notin Basis(J)];
+
+// If bt = 1/2 then 3A is isomorphic to IY_3(al, 1/2, -1/2)
+
+assert #[ J : J in Good | P.6-1/2 notin Basis(J)] eq 0;
+
+// So there are no singular points
+
+
 
 FCl := AlgebraicClosure(F);
 // Need to add one root

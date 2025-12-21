@@ -71,7 +71,7 @@ end intrinsic;
 // Yabe IV_1(1/4, bt)
 // Yabe's basis
 // <a_0, a_2> \cong <a_1, a_3> \cong 2B
-intrinsic M4A(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic M4A(:base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 4A(1/4, bt) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
   }
@@ -113,7 +113,7 @@ end intrinsic;
 
 // Yabe IV_2(al, al^2/2, 1/al)
 // Used a better basis so that the 5th basis element is the third axis in the 3C(al) subalgebras <<a_0,a_2>> and <<a_1, a_3>>.
-intrinsic M4B(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic M4B(:base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 4B(al, al^2/2) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
   }
@@ -163,7 +163,7 @@ end intrinsic;
 // Joshi's double Matsuo algebra Table 7 (p4226) in paper with Galt, Joshi, Mamontov, Shpectorov, Staroletov
 // We use Joshi's basis, but reordered d1, d3, d2, d4, w
 // <a_0, a_2> \cong <a_1, a_3> \cong 2B
-intrinsic M4J(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic M4J(:base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 4J(2bt, bt) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
   }
@@ -207,7 +207,7 @@ end intrinsic;
 // We choose the 5th basis vector as generically the intersection of these two subalgebras, we normalise so that it is an idempotent.
 // NB delta is never equal to 2
 // But delta can equal -2 iff bt = 1/4.  Then these subalgebras become the 2-dimensional S(2)^\circ and don't intersect.  However, the algebra has no non-trivial proper ideals!
-intrinsic M4Y_bt(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic M4Y_bt(:base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 4Y(1/2, bt) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
   }
@@ -254,7 +254,7 @@ end intrinsic;
 // Yabe's VI_2(al, (1-al^2)/2, -1/(al+1))
 // <a_0, a_2> \cong <a_1, a_3> \cong 3C(al), but they intersect not in the third axis, c, but in 1_U-c, where 1_U is the one for the 3C(al).  We choose this element which is also an idempotent (but an axis of Jordan type 1,0, 1-al in the 3C(al)) as the fifth basis element.
 // NB that al \neq -1, so we always have a 1_U in the 3C(al).
-intrinsic M4Y_al(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic M4Y_al(:base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 4Y(al, (1-al^2)/2) algebra over a function field, with generators and its Frobenius form.  Optional paramenter base_ring of the base field.
   }
@@ -307,7 +307,7 @@ end intrinsic;
 //          Algebras on X_5 axet
 //
 // --------------------------------------------
-intrinsic M5A(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic M5A(: base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 5A(al, (5*al-1)/8) algebra over a function field with variable al, with generators and its Frobenius form.
   }
@@ -360,7 +360,7 @@ end intrinsic;
 //
 // --------------------------------------------
 // Choose basis with 
-intrinsic M6A(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic M6A(:base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 6A algebra over a function field with variable al, with generators and its Frobenius form.
   }
@@ -419,7 +419,7 @@ intrinsic M6A(al::RngElt) -> AlgGen, SetIndx, AlgMatElt
   return A, {@ A.1, A.2 @}, ChangeRing(frob, F, phi);
 end intrinsic;
 
-intrinsic M6J(:base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic M6J(:base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
   The 6J(2bt, bt) algebra over a function field, with generators and its Frobenius form.
   }
@@ -488,30 +488,59 @@ end intrinsic;
 //          Algebras on X_\infty axet
 //
 // --------------------------------------------
-intrinsic IY3(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic IY3(: base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
-  TO DO
+  The IY3(al, 1/2, mu) algebra over a function field, with generators and its Frobenius form.  Note that this returns the split spin factor algebra, which is the generic case.
   }
-  
+  require Characteristic(base_ring) ne 2: "The characteristic of the field cannot be 2.";
+  F<mu> := FunctionField(base_ring);
+  bt := 1/2;
 
+  b := Matrix([[1,mu],[mu,1]]);
+  A, frob := SplitSpinFactor(b);
+  F<al,mu> := BaseRing(A);
+
+  return A, {@ 1/2*(A.i + al*A.3 + (al+1)*A.4) : i in [1..2] @}, frob;
 end intrinsic;
 
 intrinsic IY3(al::RngElt, mu::RngElt) -> AlgGen, SetIndx, AlgMatElt
   {
-    TO DO
+  The IY3(al, 1/2, mu) algebra, with generators and its Frobenius form.  Note that we use the basis for the split spin factor algebra, or its cover, or the exceptional algebra IY3(al,1/2,1).
   }
-  if mu eq 1 then    
+  so, F := ExistsCoveringStructure(Parent(al), Parent(mu));
+  require so: "The given values must lie in the same field.";
+  require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
+  require F!al notin { F | 1,0,1/2}: "The value of alpha cannot be 1, 0, or 1/2.";
+  
+  if mu eq 1 then
     mult := [[[1,0,0,0], [1/2,1/2,(al-1/2),1], [0,0,al,0], [0,0,0,0]],
          [[1/2,1/2,(al-1/2),1], [0,1,0,0], [0,0,al,0], [0,0,0,0]],
          [[0,0,al,0], [0,0,al,0], [0,0,0,0], [0,0,0,0]],
          [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]];
     
-    A := Algebra<Rationals(),4 | mult>;
-    return A;
+    A := Algebra<F, 4 | mult>;
+    
+    frob := DiagonalJoin(Matrix(F,[[1,1],[1,1]]), ZeroMatrix(F,2));
+    
+    return A, {@ A.1, A.2 @}, frob;
+  else // mu ne 1
+    if al eq -1 then
+      // This is the cover of the split spin factor algebra
+      b := Matrix(F, [[1,mu],[mu,1]]);
+      A, frob := SplitSpinFactorCover(b);
+      
+      return A, {@ 1/2*(A.i - A.3 + A.4) : i in [1..2] @}, frob;
+    else // al ne -1
+      // This is the usual split spin factor algebra
+      b := Matrix(F, [[1,mu],[mu,1]]);
+      A, frob := SplitSpinFactor(b, al);
+      
+      return A, {@ 1/2*(A.i + al*A.3 + (al+1)*A.4) : i in [1..2] @}, frob;
+    end if;
   end if;
 end intrinsic;
 
-intrinsic IY5(: base_ring := QQ) -> AlgGen, SetIndx, AlgMatElt
+intrinsic IY5(: base_ring := ZZ) -> AlgGen, SetIndx, AlgMatElt
   {
   The IY_5(al, 1/2) algebra over a function field, with generators and its Frobenius form.
   }

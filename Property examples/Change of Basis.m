@@ -35,26 +35,6 @@ assert HasSameStructureConstants(A, AY);
 
 // ---------------------
 //
-// 4B
-//
-// ---------------------
-// Choose the third axis in <<a_0, a_2>> \cong 3C \cong <<a_1,a_3>>, which is contained in the intersection of these two subalgebras
-A, gen, frob := M4B();
-AY, _, frobY := IV2(:specialise:="4B");
-F<al> := BaseRing(A);
-
-assert AY.1+AY.3 - 2/al*AY.1*AY.3 eq AY![1, 1, 1, 1, 4/al^2];
-
-bas := [AY.i : i in [1..4]] cat [ AY![1, 1, 1, 1, 4/al^2] ];
-AY_new := ChangeBasis(AY, bas);
-
-// Change of basis matrix is always full rank in any characteristic
-assert Determinant(Matrix(bas)) eq 4/al^2;
-
-assert HasSameStructureConstants(A, AY_new);
-
-// ---------------------
-//
 // 4J
 //
 // ---------------------
@@ -76,23 +56,21 @@ assert HasSameStructureConstants(A, AY_new);
 
 // ---------------------
 //
-// 4Y_bt
+// 4B
 //
 // ---------------------
-// The two subalgebras <<a_0, a_2>>, <<a_1,a_3>> \cong S(dl), with dl = 2^5*bt*(2*bt-1) + 2, provided bt \neq 1/4.  If $bt = 1/4, then they are S(2)^\circ and don't intersect.
-// We choose the 5th basis vector as generically the intersection of these two subalgebras, we normalise so that it is an idempotent.
-A, gen, frob := M4Y_bt();
-AY, _, frobY := IV2(:specialise:="4Y_bt");
-F<bt> := BaseRing(A);
+// Choose the third axis in <<a_0, a_2>> \cong 3C \cong <<a_1,a_3>>, which is contained in the intersection of these two subalgebras
+A, gen, frob := M4B();
+AY, _, frobY := IV2(:specialise:="4B");
+F<al> := BaseRing(A);
 
-assert 1/2*(AY.1+AY.3) + 1/(4*bt-1)*AY.1*AY.3 eq 1/2*(AY.1+AY.2+AY.3+AY.4) + 1/bt*AY.5;
+assert AY.1+AY.3 - 2/al*AY.1*AY.3 eq AY![1, 1, 1, 1, 4/al^2];
 
-// this change of basis is valid when bt = 1/4 too.  Just the above equation doesn't hold anymore.
-bas := [AY.i : i in [1..4]] cat [ 1/2*(AY.1+AY.2+AY.3+AY.4) + 1/bt*AY.5];
+bas := [AY.i : i in [1..4]] cat [ AY![1, 1, 1, 1, 4/al^2] ];
 AY_new := ChangeBasis(AY, bas);
 
 // Change of basis matrix is always full rank in any characteristic
-assert Determinant(Matrix(bas)) eq 1/bt;
+assert Determinant(Matrix(bas)) eq 4/al^2;
 
 assert HasSameStructureConstants(A, AY_new);
 
@@ -124,6 +102,28 @@ AY_new := ChangeBasis(AY, bas);
 
 // Change of basis matrix is always full rank in any characteristic
 assert Determinant(Matrix(bas)) eq 4/(al+1)^2;
+
+assert HasSameStructureConstants(A, AY_new);
+
+// ---------------------
+//
+// 4Y_bt
+//
+// ---------------------
+// The two subalgebras <<a_0, a_2>>, <<a_1,a_3>> \cong S(dl), with dl = 2^5*bt*(2*bt-1) + 2, provided bt \neq 1/4.  If $bt = 1/4, then they are S(2)^\circ and don't intersect.
+// We choose the 5th basis vector as generically the intersection of these two subalgebras, we normalise so that it is an idempotent.
+A, gen, frob := M4Y_bt();
+AY, _, frobY := IV2(:specialise:="4Y_bt");
+F<bt> := BaseRing(A);
+
+assert 1/2*(AY.1+AY.3) + 1/(4*bt-1)*AY.1*AY.3 eq 1/2*(AY.1+AY.2+AY.3+AY.4) + 1/bt*AY.5;
+
+// this change of basis is valid when bt = 1/4 too.  Just the above equation doesn't hold anymore.
+bas := [AY.i : i in [1..4]] cat [ 1/2*(AY.1+AY.2+AY.3+AY.4) + 1/bt*AY.5];
+AY_new := ChangeBasis(AY, bas);
+
+// Change of basis matrix is always full rank in any characteristic
+assert Determinant(Matrix(bas)) eq 1/bt;
 
 assert HasSameStructureConstants(A, AY_new);
 
@@ -268,6 +268,7 @@ assert HasSameStructureConstants(A, AY_new);
 //
 // ---------------------
 
+// This is in the split spin factor and forbidden papers
 
 // ---------------------
 //

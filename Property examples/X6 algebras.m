@@ -937,7 +937,8 @@ f := PermutationMatrix(QQ, [2,1,4,3,5]);
 
 G := sub<GL(5, QQ) | t1, t2, f>;
 
-I, AP := IdempotentIdeal(A);
+I := IdempotentIdeal(A);
+AP := Generic(I);
 assert Dimension(I) eq 1;
 
 P := BaseRing(AP);
@@ -961,3 +962,26 @@ assert Dimension(Eigenspace(x1, -1)) eq 1;
 
 assert InnerProduct(x1*frob, x1) eq 0;
 // Same holds for x2 and x3
+
+
+// ---------------------------------------------------------------------
+
+// Exceptional isomorphisms
+
+// ---------------------------------------------------------------------
+
+// Only possible is when \al = 2/5, bt = 1/5
+
+A6A := M6A(2/5);
+A6J := M6J(1/5);
+
+w := 2*(A6A.1 + A6A.2) -10*A6A.1*A6A.2;                                                                 
+B := ChangeBasis(A6A, [ A6A.i : i in [1..7]] cat [w]);
+
+basB := BasisProducts(B):
+bas6J := BasisProducts(6J):
+
+assert [[ Eltseq(v) : v in R] : R in basB] eq [[ Eltseq(v) : v in R] : R in bas6J];
+
+// so these are isomorphic
+

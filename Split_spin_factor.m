@@ -9,7 +9,19 @@ intrinsic SplitSpinFactor(b::Mtrx) -> AlgGen, AlgMatElt
   }
   require NumberOfRows(b) eq NumberOfColumns(b): "The matrix given must be square";
 
-  F<al> := FunctionField(FieldOfFractions(BaseRing(b)));
+  // If the base ring of b is already a field of fractions, then we want to just extend it
+  FF := BaseRing(b);
+  if Type(FF) eq FldFunRat then
+    FF_base := BaseRing(FF);
+    F<al> := FunctionField(FF_base, Rank(FF)+1);
+    // assign the names
+    AssignNames(~F, ["al"] cat Names(FF));
+    phi := hom<FF -> F | [ F.(i+1) : i in [1..Rank(FF)]]>;
+    b_new := ChangeRing(b, F, phi);
+  else
+    F<al> := FunctionField(FieldOfFractions(BaseRing(b)));
+    b_new := ChangeRing(b, F);
+  end if;
   
   dim := NumberOfRows(b)+2;
   V := VectorSpace(F, dim);
@@ -31,11 +43,11 @@ intrinsic SplitSpinFactor(b::Mtrx) -> AlgGen, AlgMatElt
     return prod;
   end function;
 
-  mult := [[ multfn(V.i, V.j, ChangeRing(b, F)) : i in [1..dim]]: j in [1..dim]];
+  mult := [[ multfn(V.i, V.j, b_new) : i in [1..dim]]: j in [1..dim]];
 
   A := Algebra<F, dim | mult>;
   
-  frob := DiagonalJoin((al+1)*(2-al)*ChangeRing(b, F), Matrix(F, [[al+1, 0],[0,2-al]]));
+  frob := DiagonalJoin((al+1)*(2-al)*b_new, Matrix(F, [[al+1, 0],[0,2-al]]));
 
   return A, frob;
 end intrinsic;
@@ -83,7 +95,7 @@ intrinsic SplitSpinFactorCover(b::Mtrx) -> AlgGen, AlgMatElt
     return prod;
   end function;
 
-  mult := [[ multfn(V.i, V.j, b) : i in [1..dim]]: j in [1..dim]];
+  mult := [[ multfn(V.i, V.j, ChangeRing(b, F)) : i in [1..dim]]: j in [1..dim]];
 
   A := Algebra<F, dim | mult>;
   

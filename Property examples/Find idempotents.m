@@ -11,9 +11,33 @@ function IdempotentIdeal(A)
   x := &+[ P.i*AP.i : i in [1..Dimension(A)]];  // this is a general element in the algebra
   I := ideal< P | Eltseq(x^2-x)>;
   
-  return I, AP;
+  return I;
 end function;
 
+function IdealOfSingularPoints(A)
+  F := BaseRing(A);
+  P := PolynomialRing(F, Dimension(A));
+  PP := PolynomialRing(Rationals(), Dimension(A)+ Rank(F));
+  PF := PolynomialRing(Rationals(), Rank(F));
+
+  phiF := hom<F->PF | [PF.i : i in [1..Rank(F)]]>;
+  phiP := hom<P->PP | [ PP.i : i in [1..Dimension(A)]]>;
+  phiPF := hom<PF->PP | [ PP.(Dimension(A)+i) : i in [1..Rank(PF)]]>;
+
+  AP := ChangeRing(A, P);
+  x := &+[ P.i*AP.i : i in [1..Dimension(A)]];  // this is a general element in the algebra
+
+  polys := [ ClearDenominators(f) : f in Eltseq(x^2-x)];
+
+  polyPP := [ &+[ (Coefficients(f)[i]@phiF@phiPF)*(Monomials(f)[i]@phiP) : i in [1..#Monomials(f)]] : f in polys];
+  I := ideal< PP | polyPP >;
+
+  J := JacobianMatrix(polyPP);
+  II := ideal< PP | polyPP cat Minors(J, Rank(J))>;
+  
+  return II, I;
+end function;
+  
 function NilpotentIdeal(A)
   F := BaseRing(A);
   P := PolynomialRing(F, Dimension(A));
@@ -22,7 +46,7 @@ function NilpotentIdeal(A)
   x := &+[ P.i*AP.i : i in [1..Dimension(A)]];  // this is a general element in the algebra
   J := ideal< P | Eltseq(x^2)>;
   
-  return J, AP;
+  return J;
 end function;
 
 function VarietyOverAlgbebraicClosure(A, I)
@@ -67,6 +91,133 @@ function FindAllIdempotents(A)
   
   return idems;
 end function;
+
+function IdempotentIdealSubspace(A, U)
+  F := BaseRing(A);
+  P := PolynomialRing(F, Dimension(U));
+  
+  AP := ChangeRing(A, P);
+  basU := [ A | v : v in Basis(U)];
+  x := &+[ P.i*AP!Eltseq(basU[i]) : i in [1..Dimension(U)]];  // this is a general element in the algebra
+  I := ideal< P | Eltseq(x^2-x)>;
+  
+  return I, basU;
+end function;
+
+function FindAllIdempotentsSubspace(A, U)
+  I, basU := IdempotentIdealSubspace(A, U);
+  
+  if Dimension(I) ne 0 then
+    print "ideal has dimension ", Dimension(I);
+    return false;
+  end if;
+  
+  var := Variety(I);
+  n := Dimension(U);
+  if #var ne VarietySizeOverAlgebraicClosure(I) then
+    F := BaseRing(A);
+    FCl := AlgebraicClosure(F);
+
+    var := Variety(I, FCl);
+    basU := [ ChangeRing(u, FCl) : u in basU];
+    ACl := ChangeRing(A, FCl);
+    idems := [ ACl!Eltseq( &+[t[i]*basU[i] : i in [1..n]]) : t in var];
+  else
+    idems := [ A!Eltseq([ t[i]*basU[i] : i in [1..n]]) : t in var];
+  end if;
+  
+  return idems;
+end function;
+  
+  
+// Given an idempotent x and a sequence of ideampotents L,
+// find those in L which have the same characteristic polynomial as x
+// returns any possibilities with the characteristic/poly in variables which needs to be satisfied
+
+FindMatchingIdempotents := function(x, L)
+  n := Degree(x);
+  char_x := CharacteristicPolynomial(x);
+  assert Coefficient(char_x, n) eq 1;
+  pos := Index(L, x);
+  if pos ne 0 then
+    Remove(~L, x);
+    assert x notin L;
+  end if;
+  char_L := [ CharacteristicPolynomial(y) : y in L];
+  assert forall{ p : p in char_L | Coefficient(p, n) eq 1};
+
+  FCl := BaseRing(Parent(x));
+  if Type(FCl) eq FldAC then
+    F := BaseRing(FCl);
+  else
+    F := FCl;
+  end if;
+  P := RingOfIntegers(F);
+  ZP := ChangeRing(P, Integers());
+
+  fail := [];
+  for i-> py in char_L do
+    print i;
+    p := py - char_x;
+    
+    coeffs := [ q : q in Coefficients(p) | q ne 0];
+    so, cond := CanChangeUniverse(coeffs, P);
+    
+    if so then
+      ds := [ LCM([ Denominator(e) : e in Eltseq(q)]) : q in cond];
+      
+      // Doing each of these seperately - but below do all together???  
+      cond := [ ZP!(ds[i]*cond[i]) : i in [1..#cond]];
+      gcd := GCD(cond);
+
+      print gcd;
+      if gcd ne 1 and gcd mod 2 ne 0 then
+        Append(~fail, <L[i], py, gcd>);
+      end if;
+    else
+      // the coefficients of p involve elements in the algebraically closed field
+      Aff := AffineAlgebra(FCl);
+      
+      coeffs := ChangeUniverse(coeffs, Aff);
+      if forall{ q : q in coeffs | IsUnivariate(q)} then
+      /*
+        coeffs := [ UnivariatePolynomial(q) : q in coeffs];
+        // clear each of the denominators
+        denom := LCM(Flat([[Denominator(e) : e in Eltseq(q)] : q in coeffs]));
+        coeffs := [ denom*q : q in coeffs];
+        denom := LCM(Flat([[[Denominator(t) : t in Eltseq(P!e) | t ne 0] : e in Eltseq(q)] : q in coeffs]));
+        coeffs := [ denom*q : q in coeffs];
+        
+        Ft := Universe(coeffs);
+        assert F eq BaseRing(Ft);
+        assert P eq RingOfIntegers(F);
+        Pt := PolynomialRing(P);
+        Zt := PolynomialRing(ZP);
+        coeffs := ChangeUniverse(ChangeUniverse(coeffs,Pt), Zt);
+        
+        gcd := GCD(coeffs);
+        if gcd ne 1 and gcd mod 2 ne 0 then
+          Append(~fail, <L[i], py, gcd>);
+        end if;
+        */
+        // Is GCD the right thing above??
+        Append(~fail, <L[i], py, "univariate">);
+      else
+        // multivariate - need to be more careful
+        // do by hand???
+        Append(~fail, <L[i], py, "multivariate">);
+      end if;    
+    end if;
+  end for;
+
+  return fail;
+end function;
+
+
+
+
+
+
 
 // return the squarefree part of a function field element
 function SquareFreePart(x)
@@ -167,7 +318,11 @@ function PrettyMagma(x)
 
   x_num, x_denom := Pretty(x);
 
-  num_str := Join([ t[2] eq 1 select bracket(t[1]) else bracket(t[1]) cat "^" cat Sprint(t[2]) : t in x_num], "*");
+  if x_num eq [] then
+    num_str := "1";
+  else
+    num_str := Join([ t[2] eq 1 select bracket(t[1]) else bracket(t[1]) cat "^" cat Sprint(t[2]) : t in x_num], "*");
+  end if;
 
   denom_str := Join([ t[2] eq 1 select bracket(t[1]) else bracket(t[1]) cat "^" cat Sprint(t[2]) : t in x_denom], "/");
 
@@ -178,15 +333,69 @@ function PrettyMagma(x)
   end if;
 end function;
 
+function LaTeX(y)
+  FF := Parent(y);
+  names := Names(FF);
+  names_str := [ "\\" cat name : name in names];
+  
+  y_str := Sprint(y);
+  for i->name in names do
+    y_str := Join(Split(y_str, name), names_str[i]);
+  end for;
+  
+  y_str := Join(Split(y_str, "*"), " ");
 
+  return y_str;
+end function;
 
-algebras := [ "M3A()", "M4A()", "M4B()","M4J()","M4Y_al()","M4Y_bt()","M5A()","M6A()","M6J()","M6Y()", "IY3()", "IY5()"];
+function LaTeXprint(x)
+  F := Parent(x);
+  assert Characteristic(F) eq 0;
+  // First check if it involves a algebraically closed field
+  
+  if Type(F) eq FldAC then
+    Fbase := BaseField(F);
+    so, xx := IsCoercible(Fbase, x);
+    if so then
+      return LaTeXprint(xx);
+    else
+      Faff := AffineAlgebra(F);
+      xx := Faff!x;
+      coeffs := Coefficients(xx);
+      mons := Monomials(xx);
+      mons_var := [ m eq 1 select "" else "\\" cat Sprint(m) : m in mons];
 
-// Test out which algebras have finitely many idempotents
-/*
-for alg in algebras do
-  A := eval(alg);
-  I := IdempotentIdeal(A);
-  print alg, Dimension(I);
-end for;
-*/
+      coeffs_str := [ LaTeXprint(c) : c in coeffs];
+      return Join([ "(" cat c cat ") " cat mons_var[i] : i-> c in coeffs_str], " + ");
+    end if;
+  end if;
+  
+  // If it is in a function field, split into numerator and denominator
+  x_num, x_denom := Pretty(x);
+  
+  bracket := function(y);
+    P := RingOfIntegers(Parent(y));
+    if IsCoercible(Rationals(), y) then
+      return Sprint(y);
+    elif #[ e : e in Eltseq(P!y) | e ne 0] eq 1 then
+      return Sprint(y);
+    else
+      return "(" cat LaTeX(y) cat ")";
+    end if;
+  end function;
+  
+  if x_num eq [] then
+    num_str := "1";
+  else
+    num_str := Join([ t[2] eq 1 select bracket(t[1]) else bracket(t[1]) cat "^" cat Sprint(t[2]) : t in x_num], " ");
+  end if;
+
+  denom_str := Join([ t[2] eq 1 select bracket(t[1]) else bracket(t[1]) cat "^" cat Sprint(t[2]) : t in x_denom], " ");
+  
+  if #denom_str eq 0 then
+    return num_str;
+  else
+    return "\\frac{" cat num_str cat "}{" cat denom_str cat "}";
+  end if;
+end function;
+

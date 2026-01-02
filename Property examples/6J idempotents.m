@@ -12,16 +12,6 @@ load "Find idempotents.m";
 A , gen, frob := M6J();
 F<bt> := BaseRing(A);
 
-t1:= MiyamotoInvolution(A.1);
-t2:= MiyamotoInvolution(A.2);
-f := PermutationMatrix(F,[2,1,6,5,4,3,7,8]);
-assert forall{<i,j> : i,j in [1..8] | ((A.i)*f)*((A.j)*f) eq (A.i*A.j)*f};
-
-G := sub<GL(8,F) | t1,t2,f>;
-Miy := sub<GL(8,F)|t1,t2>;
-assert Order(Miy) eq 6;
-assert Order(G) eq 12;
-
 tt1 := Sym(8)!(2,6)(3,5);
 tt2 := Sym(8)!(4,6)(3,1);
 ff := Sym(8)![2,1,6,5,4,3,7,8];
@@ -35,34 +25,42 @@ Since we know how many to expect, we can show we have them all.
 
 */
 // We need to add roots to the field
-PF := PolynomialRing(F);
+PF<t> := PolynomialRing(F);
 
 p1 := 2^7*3*bt^5 -3*5*2^6*bt^4 + 373*bt^3 -3*7*bt^2 -3^2*bt +1;
+assert p1 eq 384*bt^5 - 960*bt^4 + 373*bt^3 - 21*bt^2 - 9*bt + 1;
 
-PF := PolynomialRing(F);
 FCl := AlgebraicClosure(F);
 rt1 := Sqrt(FCl!-(11*bt-1)/p1);
 rt2 := Sqrt(FCl!-(4*bt - 1)*(4*bt^2 - 7*bt + 1)/p1);
 
 rt3 := Sqrt(FCl!1/(36*bt^4 + 140*bt^3 - 43*bt^2 - 2*bt + 1));
 
-f6:= 2^4*(7*bt + 1)^4*p1^2*PF.1^4 + 2^3*(7*bt + 1)^2*p1*(960*bt^5 - 1536*bt^4 + 167*bt^3 + 69*bt^2 - 3*bt - 1)*PF.1^2 + (608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)^2;
+f2 := t^2 + 2*(960*bt^5 - 1536*bt^4 + 167*bt^3 + 69*bt^2 - 3*bt - 1)*t + (608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)^2;
 
-rt6 := Roots(f6, FCl)[1,1];
-/*
-f2 := PF.1^2 + 2*(960*bt^5 - 1536*bt^4 + 167*bt^3 + 69*bt^2 - 3*bt - 1)*PF.1 + (608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)^2;
-rootf2 := Roots(f2, FCl)[1,1];
+rootsf2 := [ r[1] : r in Roots(f2, FCl)];
 
-rt2 := Sqrt(FCl!rootf2/2^2/(7*bt+1)^2/(384*bt^5 - 960*bt^4 + 373*bt^3 - 21*bt^2 - 9*bt + 1));
-*/
+chis := [Sqrt(FCl!r/2^2/(7*bt+1)^2/p1) : r in rootsf2];
 
+// Now need to fix the signs of the two chis
+
+value := (608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)/2^2/(7*bt + 1)^2/p1;
+
+so := exists(sgn){ sgn : sgn in [1,-1] | sgn*chis[1]*chis[2] eq value };
+assert so;
+chis[2] *:= sgn;
+
+
+// We need some more roots
 // The poly for the ratios of the roots in the idempotent
-q := PF.1^3 + (95150080*bt^13 - 30660608*bt^12 + 41302272*bt^11 - 7444096*bt^10 + 4008752*bt^9 - 629208*bt^8 - 61800*bt^7 - 29922*bt^6 - 5787*bt^5 - 833*bt^4 + 874*bt^3 + 12*bt^2 - 7*bt - 1)/(20676608*bt^13 - 6565888*bt^12 + 7718912*bt^11 - 1156480*bt^10 + 668544*bt^9 - 49480*bt^8 - 14756*bt^7 - 7906*bt^6 - 2063*bt^5 - 209*bt^4 + 6*bt^3 + 76*bt^2 - 3*bt - 1)*PF.1^2
-        + (124190720*bt^13 - 50341888*bt^12 + 53701632*bt^11 - 13538432*bt^10 + 5279872*bt^9 - 956448*bt^8 - 112776*bt^7 + 34662*bt^6 - 20817*bt^5 + 4337*bt^4 + 206*bt^3 - 72*bt^2 - 5*bt + 1)/(20676608*bt^13 - 6565888*bt^12 + 7718912*bt^11 - 1156480*bt^10 + 668544*bt^9 - 49480*bt^8 - 14756*bt^7 - 7906*bt^6 - 2063*bt^5 - 209*bt^4 + 6*bt^3 + 76*bt^2 - 3*bt - 1)*PF.1 + (35348480*bt^13 - 20611072*bt^12 + 13622784*bt^11 - 3971328*bt^10 + 326784*bt^9 + 57856*bt^8 - 130924*bt^7 + 35614*bt^6 - 2341*bt^5 - 159*bt^4 + 322*bt^3 - 80*bt^2 - bt + 1)/(20676608*bt^13 - 6565888*bt^12 + 7718912*bt^11 - 1156480*bt^10 + 668544*bt^9 - 49480*bt^8 - 14756*bt^7 - 7906*bt^6 - 2063*bt^5 - 209*bt^4 + 6*bt^3 + 76*bt^2 - 3*bt - 1);
+q := (20676608*bt^13 - 6565888*bt^12 + 7718912*bt^11 - 1156480*bt^10 + 668544*bt^9 - 49480*bt^8 - 14756*bt^7 - 7906*bt^6 - 2063*bt^5 - 209*bt^4 + 6*bt^3 + 76*bt^2 - 3*bt - 1)*t^3
+       + (95150080*bt^13 - 30660608*bt^12 + 41302272*bt^11 - 7444096*bt^10 + 4008752*bt^9 - 629208*bt^8 - 61800*bt^7 - 29922*bt^6 - 5787*bt^5 - 833*bt^4 + 874*bt^3 + 12*bt^2 - 7*bt - 1)*t^2
+        + (124190720*bt^13 - 50341888*bt^12 + 53701632*bt^11 - 13538432*bt^10 + 5279872*bt^9 - 956448*bt^8 - 112776*bt^7 + 34662*bt^6 - 20817*bt^5 + 4337*bt^4 + 206*bt^3 - 72*bt^2 - 5*bt + 1)*t 
+        + (35348480*bt^13 - 20611072*bt^12 + 13622784*bt^11 - 3971328*bt^10 + 326784*bt^9 + 57856*bt^8 - 130924*bt^7 + 35614*bt^6 - 2341*bt^5 - 159*bt^4 + 322*bt^3 - 80*bt^2 - bt + 1);
 
 rhos := [ r[1] : r in Roots(q, FCl)];
 
-// define three xi_i as the linear combinations below of 1, rho and rho^2
+// define three zeta_i as the linear combinations below of 1, rho and rho^2
 
 lin_comb := [-(184225240186880*bt^25 + 288702425202688*bt^24 - 74735996108800*bt^23 + 224221306814464*bt^22 - 92218797981696*bt^21 + 70634041679872*bt^20 - 31441472532480*bt^19 + 13262442963968*bt^18 - 5672465330688*bt^17 + 1758753594400*bt^16 - 578395573840*bt^15 + 145753586896*bt^14 - 25623893176*bt^13 + 2938203714*bt^12 + 869988875*bt^11 - 497299218*bt^10 + 135625966*bt^9 - 26408511*bt^8 + 2126690*bt^7 + 286000*bt^6 - 114976*bt^5 + 11104*bt^4 + 2283*bt^3 - 374*bt^2 - 30*bt + 5),
             -2*bt*(66539613061120*bt^24 + 133440162758656*bt^23 - 38252056674304*bt^22 + 99026917130240*bt^21 - 39275684069376*bt^20 + 28395688206336*bt^19 - 12556797956096*bt^18 + 4940435230720*bt^17 - 2169311800192*bt^16 + 673127462496*bt^15 - 224931380528*bt^14 + 64717274624*bt^13 - 13817295552*bt^12 + 3055018414*bt^11 - 473069311*bt^10 + 45655443*bt^9 - 14833136*bt^8 + 4425680*bt^7 - 1094770*bt^6 + 295650*bt^5 - 29748*bt^4 - 4934*bt^3 + 1033*bt^2 - 13*bt - 4),
@@ -76,7 +74,7 @@ assert #m eq 1;
 m := m[1];
 assert Degree(m) eq 3;
 
-xis := [Sqrt(sqrs[i]) : i in [1..3]];
+zetas := [Sqrt(sqrs[i]) : i in [1..3]];
 
 // Simplify takes about 104 secs
 Simplify(FCl: Partial:=true);
@@ -87,22 +85,22 @@ Prune(FCl);
 signs := [ <i,j> : i,j in [+1,-1]];
 
 value := 1/2/(7*bt + 1)/(56*bt^3 - 9*bt^2 + 6*bt - 1)/(151552*bt^11 + 261120*bt^10 - 26240*bt^9 + 89408*bt^8 - 10808*bt^7 + 8132*bt^6 - 4022*bt^5 + 389*bt^4 - 272*bt^3 + 18*bt^2 + 22*bt - 3)*
-          ( (1096679424*bt^16 - 598540288*bt^15 + 482988032*bt^14 - 201112576*bt^13 + 39421696*bt^12 - 17985792*bt^11 + 105744*bt^10 + 357752*bt^9 + 189048*bt^8 + 83334*bt^7 - 13165*bt^6 + 2252*bt^5 - 3007*bt^4 + 214*bt^3 + 69*bt^2 - 1)/2/bt*xis[1] +
-            (64*bt^3 - 2*bt^2 + 5*bt - 1)*(26603520*bt^12 - 6814720*bt^11 + 11714176*bt^10 - 1791808*bt^9 + 1137656*bt^8 - 197588*bt^7 - 6058*bt^6 - 17687*bt^5 + 1019*bt^4 - 938*bt^3 + 364*bt^2 + 5*bt - 5)*xis[1]*rhos[1] + 
-            (64*bt^3 - 2*bt^2 + 5*bt - 1)*(20676608*bt^13 - 6565888*bt^12 + 7718912*bt^11 - 1156480*bt^10 + 668544*bt^9 - 49480*bt^8 - 14756*bt^7 - 7906*bt^6 - 2063*bt^5 - 209*bt^4 + 6*bt^3 + 76*bt^2 - 3*bt - 1)/2/bt*xis[1]*rhos[1]^2 );
+          ( (1096679424*bt^16 - 598540288*bt^15 + 482988032*bt^14 - 201112576*bt^13 + 39421696*bt^12 - 17985792*bt^11 + 105744*bt^10 + 357752*bt^9 + 189048*bt^8 + 83334*bt^7 - 13165*bt^6 + 2252*bt^5 - 3007*bt^4 + 214*bt^3 + 69*bt^2 - 1)/2/bt*zetas[1] +
+            (64*bt^3 - 2*bt^2 + 5*bt - 1)*(26603520*bt^12 - 6814720*bt^11 + 11714176*bt^10 - 1791808*bt^9 + 1137656*bt^8 - 197588*bt^7 - 6058*bt^6 - 17687*bt^5 + 1019*bt^4 - 938*bt^3 + 364*bt^2 + 5*bt - 5)*zetas[1]*rhos[1] + 
+            (64*bt^3 - 2*bt^2 + 5*bt - 1)*(20676608*bt^13 - 6565888*bt^12 + 7718912*bt^11 - 1156480*bt^10 + 668544*bt^9 - 49480*bt^8 - 14756*bt^7 - 7906*bt^6 - 2063*bt^5 - 209*bt^4 + 6*bt^3 + 76*bt^2 - 3*bt - 1)/2/bt*zetas[1]*rhos[1]^2 );
 
-so := exists(p){ p : p in signs | p[1]*xis[2] + p[2]*xis[3] eq value };
+so := exists(p){ p : p in signs | p[1]*zetas[2] + p[2]*zetas[3] eq value };
 
 assert so;
-xis[2] *:= p[1];
-xis[3] *:= p[2];
+zetas[2] *:= p[1];
+zetas[3] *:= p[2];
 
 
 
 ACl := ChangeRing(A, FCl);
 frobCl := ChangeRing(frob, FCl);
 
-G_FCl := ChangeRing(G, FCl);
+// G_FCl := ChangeRing(G, FCl);
 
 // In addition to the 208 idempotents below, there are 4 orbits of size 12 giving 2^8 = 256 = 208 + 4*12 idempotents in total.
 
@@ -309,9 +307,23 @@ axes_id13 := ChangeUniverse(Orbit(GG, Vector(id13-ACl.1)), ACl);
 assert #axes_id13 eq 6;
 assert InnerProduct((id13-ACl.1)*frobCl, id13-ACl.1) eq (2-bt)/(bt+1);
 
+evals, espace, FL := IdentifyFusionLaw(id13-ACl.1);
+assert #evals eq 7;
+Gr, gr := Grading(FL);
+assert Order(Gr) eq 2;
+V := VectorSpace(ACl);
+assert &+[ espace[i] : i in [1..7] | i@gr eq Gr.1 ] eq sub<V|V.2-V.6, V.3-V.5>;
+
 axes_id14 := ChangeUniverse(Orbit(GG, Vector(id14-ACl.1)), ACl);
 assert #axes_id14 eq 6;
 assert InnerProduct((id14-ACl.1)*frobCl, id14-ACl.1) eq 2*(1-bt)/(2*bt+1);
+
+evals, espace, FL := IdentifyFusionLaw(id14-ACl.1);
+assert #evals eq 7;
+Gr, gr := Grading(FL);
+assert Order(Gr) eq 2;
+V := VectorSpace(ACl);
+assert &+[ espace[i] : i in [1..7] | i@gr eq Gr.1 ] eq sub<V|V.2-V.6, V.3-V.5>;
 
 // For each of these we get id - these
 axes_idid13 := ChangeUniverse(Orbit(GG, Vector(id-(id13-ACl.1))), ACl);
@@ -344,7 +356,7 @@ assert InnerProduct((id-u4)*frobCl, id-u4) eq 1/2/(7*bt+1)*( 9 + (7*bt+1) -3*bt*
 orbs join:= {@ o4, o4_pair@};
 idems := &join orbs;
 
-u5 := id/2 + 1/2*ACL.1
+u5 := id/2 + 1/2*ACl.1
          + (bt*(42*bt^2 - 7*bt - 1)/2/(7*bt+1)*rt3)*ACl.1
          - (34*bt^2 - 3*bt - 1)/2/(7*bt+1)*rt3*(ACl.2 + ACl.6 + ACl.8)
          + (22*bt^2-3*bt-1)/2/(7*bt+1)*rt3*(ACl.3 + ACl.5)
@@ -367,61 +379,32 @@ assert InnerProduct((id-u5)*frobCl, id-u5) eq 1/2/(7*bt+1)*( 9 - (7*bt+1) -3*bt*
 orbs join:= {@ o5, o5_pair@};
 idems := &join orbs;
 
-rt6_conj := 2/(608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)*(
-                  2*(7*bt + 1)^2*p1*rt6^3 + 
-                  + (960*bt^5 - 1536*bt^4 + 167*bt^3 + 69*bt^2 - 3*bt - 1)*rt6);
-
-assert rt6_conj in Conjugates(rt6) and -rt6_conj in Conjugates(rt6);
 
 u6 := id/2 + 
-             (24*bt^2 - bt - 1)/(2*bt - 1)/bt/(608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)
-*((7*bt + 1)^2*(384*bt^5 - 960*bt^4 + 373*bt^3 - 21*bt^2 - 9*bt+ 1)*rt6^3 +
-(1312*bt^5 - 1920*bt^4 + 287*bt^3 + 61*bt^2 - 3*bt -1)/2^2*rt6)
-*( -(46*bt^2 - 3*bt - 1)/(24*bt^2 - bt - 1)*ACl.1 + ACl.3 + ACl.5)
-             + rt6*(ACl.2+ACl.4+ACl.6)
-             - rt6_conj*(ACl.7+ACl.8);
+             1/bt/4/(2*bt-1)*(chis[1]+chis[2])*((46*bt^2 - 3*bt - 1)*ACl.1 - (24*bt^2-bt-1)*(ACl.3+ACl.5)) + chis[1]*(ACl.2+ACl.4+ACl.6)
+             + chis[2]*(ACl.7+ACl.8);
 
 assert IsIdempotent(u6);
 o6 := ChangeUniverse(Orbit(GG, Vector(u6)), ACl);
 assert #o6 eq 6;
-assert InnerProduct(u6*frobCl, u6) eq
-   - (11*bt - 1)/bt/(608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)*(
-         (7*bt + 1)^2*p1*rt6^3
-         + (1312*bt^5 - 1920*bt^4 + 287*bt^3 + 61*bt^2 - 3*bt - 1)/2^2*rt6 )
-     + 3^2/2/(7*bt + 1);
+assert InnerProduct(u6*frobCl, u6) eq 9/2/(7*bt+1) + (11*bt-1)/4/bt*(chis[1]+chis[2]);
 
 assert id-u6 notin o6;
 o6_pair := ChangeUniverse(Orbit(GG, Vector(id-u6)), ACl);
-assert InnerProduct((id-u6)*frobCl, id-u6) eq
-   (11*bt - 1)/bt/(608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)*(
-         (7*bt + 1)^2*p1*rt6^3
-         + (1312*bt^5 - 1920*bt^4 + 287*bt^3 + 61*bt^2 - 3*bt - 1)/2^2*rt6 )
-     + 3^2/2/(7*bt + 1);
+assert InnerProduct((id-u6)*frobCl, id-u6) eq 9/2/(7*bt+1) - (11*bt-1)/4/bt*(chis[1]+chis[2]);
 
 u6c := id/2 + 
-             (24*bt^2 - bt - 1)/(2*bt - 1)/bt/(608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)
-*((7*bt + 1)^2*(384*bt^5 - 960*bt^4 + 373*bt^3 - 21*bt^2 - 9*bt+ 1)*rt6^3 +
-(1312*bt^5 - 1920*bt^4 + 287*bt^3 + 61*bt^2 - 3*bt -1)/2^2*rt6)
-*( -(46*bt^2 - 3*bt - 1)/(24*bt^2 - bt - 1)*ACl.1 + ACl.3 + ACl.5)
-             - rt6_conj*(ACl.2+ACl.4+ACl.6)
-             + rt6*(ACl.7+ACl.8);
+             1/bt/4/(2*bt-1)*(chis[1]+chis[2])*((46*bt^2 - 3*bt - 1)*ACl.1 - (24*bt^2-bt-1)*(ACl.3+ACl.5)) + chis[2]*(ACl.2+ACl.4+ACl.6)
+             + chis[1]*(ACl.7+ACl.8);
 
 assert IsIdempotent(u6c);
 o6c := ChangeUniverse(Orbit(GG, Vector(u6c)), ACl);
 assert #o6c eq 6;
-assert InnerProduct(u6c*frobCl, u6c) eq
-   -(11*bt - 1)/bt/(608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)*(
-         (7*bt + 1)^2*p1*rt6^3
-         + (1312*bt^5 - 1920*bt^4 + 287*bt^3 + 61*bt^2 - 3*bt - 1)/2^2*rt6 )
-     + 3^2/2/(7*bt + 1);
+assert InnerProduct(u6c*frobCl, u6c) eq InnerProduct(u6*frobCl, u6);
 
 assert id-u6c notin o6c;
 o6c_pair := ChangeUniverse(Orbit(GG, Vector(id-u6c)), ACl);
-assert InnerProduct((id-u6c)*frobCl, id-u6c) eq
-   (11*bt - 1)/bt/(608*bt^5 - 1152*bt^4 + 47*bt^3 + 77*bt^2 - 3*bt - 1)*(
-         (7*bt + 1)^2*p1*rt6^3
-         + (1312*bt^5 - 1920*bt^4 + 287*bt^3 + 61*bt^2 - 3*bt - 1)/2^2*rt6 )
-     + 3^2/2/(7*bt + 1);
+assert InnerProduct((id-u6c)*frobCl, id-u6c) eq InnerProduct((id-u6)*frobCl, id-u6);
 
 orbs join:= {@ o6, o6_pair, o6c, o6c_pair @};
 assert #orbs eq 8+4+8+14;
@@ -430,25 +413,20 @@ assert #idems eq 8 + 2*4 + 3*8 + 6*14;
 
 // We get 3x2 orbits of idempotents
 
-u71 := ACl![ xis[2]*rhos[2], xis[3], xis[2], xis[3]*rhos[3], xis[2], xis[3], xis[1]*rhos[1], xis[1]];
-u72 := ACl![ xis[3]*rhos[3], xis[1], xis[3], xis[1]*rhos[1], xis[3], xis[1], xis[2]*rhos[2], xis[2]];
-u73 := ACl![ xis[1]*rhos[1], xis[2], xis[1], xis[2]*rhos[2], xis[1], xis[2], xis[3]*rhos[3], xis[3]];
+u71 := ACl![ zetas[2]*rhos[2], zetas[3], zetas[2], zetas[3]*rhos[3], zetas[2], zetas[3], zetas[1]*rhos[1], zetas[1]];
+u72 := ACl![ zetas[3]*rhos[3], zetas[1], zetas[3], zetas[1]*rhos[1], zetas[3], zetas[1], zetas[2]*rhos[2], zetas[2]];
+u73 := ACl![ zetas[1]*rhos[1], zetas[2], zetas[1], zetas[2]*rhos[2], zetas[1], zetas[2], zetas[3]*rhos[3], zetas[3]];
 
 
 assert IsIdempotent(id/2 + u71);
 o71 := ChangeUniverse(Orbit(GG, Vector(id/2 + u71)), ACl);
 
-assert InnerProduct((id/2+u71)*frobCl, id/2+u71) eq  3*(36*bt^3 - 6*bt^2 + 5*bt - 1)*(20676608*bt^13 - 6565888*bt^12 + 7718912*bt^11 - 1156480*bt^10 + 668544*bt^9 - 49480*bt^8 - 14756*bt^7 - 7906*bt^6 - 2063*bt^5 - 209*bt^4 + 6*bt^3 + 76*bt^2 - 3*bt - 1)/2^2/bt/(7*bt + 1)/(56*bt^3 - 9*bt^2 + 6*bt - 1)/(151552*bt^11 + 261120*bt^10 - 26240*bt^9 + 89408*bt^8 - 10808*bt^7 + 8132*bt^6 - 4022*bt^5 + 389*bt^4 - 272*bt^3 + 18*bt^2 + 22*bt - 3)*xis[1]*rhos[1]^2 + 
-        3*(36*bt^3 - 6*bt^2 + 5*bt - 1)*(26603520*bt^12 - 6814720*bt^11 + 11714176*bt^10 - 1791808*bt^9 + 1137656*bt^8 - 197588*bt^7 - 6058*bt^6 - 17687*bt^5 + 1019*bt^4 - 938*bt^3 + 364*bt^2 + 5*bt - 5)/2/(7*bt + 1)/(56*bt^3 - 9*bt^2 + 6*bt - 1)/(151552*bt^11 + 261120*bt^10 - 26240*bt^9 + 89408*bt^8 - 10808*bt^7 + 8132*bt^6 - 4022*bt^5 + 389*bt^4 - 272*bt^3 + 18*bt^2 + 22*bt - 3)*xis[1]*rhos[1] + 
-        3*(36*bt^3 - 6*bt^2 + 5*bt - 1)*(20848640*bt^13 - 2369536*bt^12 + 5399296*bt^11 + 268288*bt^10 - 218320*bt^9 + 149240*bt^8 - 100772*bt^7 + 10520*bt^6 - 1475*bt^5 - 35*bt^4 + 270*bt^3 - 30*bt^2 - 7*bt + 1)/2^2/bt/(7*bt + 1)/(56*bt^3 - 9*bt^2 + 6*bt - 1)/(151552*bt^11 + 261120*bt^10 - 26240*bt^9 + 89408*bt^8 - 10808*bt^7 + 8132*bt^6 - 4022*bt^5 + 389*bt^4 - 272*bt^3 + 18*bt^2 + 22*bt - 3)*xis[1] + 
-        3^2/2/(7*bt + 1);
+assert InnerProduct((id/2+u71)*frobCl, id/2+u71) eq 9/2/(7*bt+1) + 3*(36*bt^3 - 6*bt^2 + 5*bt - 1)/(64*bt^3 - 2*bt^2 + 5*bt - 1)*(zetas[1]+zetas[2]+zetas[3]);
+
 
 assert id/2-u71 notin o71;
 o71_pair := ChangeUniverse(Orbit(GG, Vector(id/2-u71)), ACl);
-assert InnerProduct((id/2-u71)*frobCl, id/2-u71) eq  -3*(36*bt^3 - 6*bt^2 + 5*bt - 1)*(20676608*bt^13 - 6565888*bt^12 + 7718912*bt^11 - 1156480*bt^10 + 668544*bt^9 - 49480*bt^8 - 14756*bt^7 - 7906*bt^6 - 2063*bt^5 - 209*bt^4 + 6*bt^3 + 76*bt^2 - 3*bt - 1)/2^2/bt/(7*bt + 1)/(56*bt^3 - 9*bt^2 + 6*bt - 1)/(151552*bt^11 + 261120*bt^10 - 26240*bt^9 + 89408*bt^8 - 10808*bt^7 + 8132*bt^6 - 4022*bt^5 + 389*bt^4 - 272*bt^3 + 18*bt^2 + 22*bt - 3)*xis[1]*rhos[1]^2 + 
-        -3*(36*bt^3 - 6*bt^2 + 5*bt - 1)*(26603520*bt^12 - 6814720*bt^11 + 11714176*bt^10 - 1791808*bt^9 + 1137656*bt^8 - 197588*bt^7 - 6058*bt^6 - 17687*bt^5 + 1019*bt^4 - 938*bt^3 + 364*bt^2 + 5*bt - 5)/2/(7*bt + 1)/(56*bt^3 - 9*bt^2 + 6*bt - 1)/(151552*bt^11 + 261120*bt^10 - 26240*bt^9 + 89408*bt^8 - 10808*bt^7 + 8132*bt^6 - 4022*bt^5 + 389*bt^4 - 272*bt^3 + 18*bt^2 + 22*bt - 3)*xis[1]*rhos[1] + 
-        -3*(36*bt^3 - 6*bt^2 + 5*bt - 1)*(20848640*bt^13 - 2369536*bt^12 + 5399296*bt^11 + 268288*bt^10 - 218320*bt^9 + 149240*bt^8 - 100772*bt^7 + 10520*bt^6 - 1475*bt^5 - 35*bt^4 + 270*bt^3 - 30*bt^2 - 7*bt + 1)/2^2/bt/(7*bt + 1)/(56*bt^3 - 9*bt^2 + 6*bt - 1)/(151552*bt^11 + 261120*bt^10 - 26240*bt^9 + 89408*bt^8 - 10808*bt^7 + 8132*bt^6 - 4022*bt^5 + 389*bt^4 - 272*bt^3 + 18*bt^2 + 22*bt - 3)*xis[1] + 
-        3^2/2/(7*bt + 1);
+assert InnerProduct((id/2-u71)*frobCl, id/2-u71) eq  9/2/(7*bt+1) - 3*(36*bt^3 - 6*bt^2 + 5*bt - 1)/(64*bt^3 - 2*bt^2 + 5*bt - 1)*(zetas[1]+zetas[2]+zetas[3]);
 
 
 // u72
@@ -477,8 +455,6 @@ idems := &join orbs;
 assert #idems eq 8 + 2*4 + 3*8 + 6*20;
 
 
-
-
-// 6 orbits here for id/2 \pm u7
+// 8 more orbits coming from prim[2]
 
 

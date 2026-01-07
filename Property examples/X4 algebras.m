@@ -1,7 +1,9 @@
 /*
+******************************
 
-Code to verify properties of the 2-generated axial algebras of Monster type
+Code to verify properties of Monster type axial algebras with the X(4) axet
 
+******************************
 */
 AttachSpec("../2-gen Monster.spec");
 AttachSpec("../../AxialTools/AxialTools.spec");
@@ -9,20 +11,13 @@ load "Find idempotents.m";
 
 QQ := Rationals();
 ZZ := Integers();
-/*
-******************************
 
-X(4) axet
-
-Look in the survey paper folder for other code!!
-
-******************************
-*/
 // =========================================================
 //
 // 4A(1/4, bt)
 //
 // =========================================================
+
 A, gen, frob := M4A();
 F<bt> := BaseRing(A);
 
@@ -324,22 +319,139 @@ assert #prim eq 3;
 prim0 := [ J : J in prim | Dimension(J) eq 0];
 prim1 := [ J : J in prim | Dimension(J) ne 0];
 
-assert #prim1 eq 2;
+FCl := AlgebraicClosure(QQ);
+
+assert #prim0 eq 1;
 assert Variety(prim0[1], FCl) eq [<0,0,0,0,0>];
 
 assert #prim1 eq 2;
 J := prim1[1];
-// Don't know about this one!!
+P := Generic(J);
 
+J0 := ideal<P | P.1+P.2+P.3+P.4-1, P.1*P.3+P.5/8, P.2*P.4+P.5/8, (P.1+P.3)^2 -(P.1+P.3) + P.5/2>;
+assert J0 eq J;
+/*
+Set  nu = p1+p3
+
+Then p5 = 2 nu(1 - nu)
+
+Set lm = p1
+So p3 = nu-lm
+
+Since p1p3 +p5/8 = 0
+
+lm(nu-lm) + nu(1-nu)/4 = 0
+
+4lm^2 -4*nu*lm + nu(nu-1) = 0
+
+Set mu = p2, so p4 = 1 - nu - mu
+
+Since p2p4 + p5/8 = 0
+
+4mu^2 - 4(1-nu)*mu + nu(nu-1) = 0
+
+NB this is just exchanging the roles of nu and 1-nu
+
+So idempotent is 
+
+x = lm a_0 + mu a_1 + (nu-lm)a_2 + (1-nu-mu)a_3 + 2nu(1-nu)e 
+
+such that
+
+4lm^2 -4lm*nu + nu(nu-1) = 0
+4mu^2 -4mu*(1-nu) + nu(nu-1) = 0
+
+*/
 
 // The ideal of idempotents in the double axis subalgebra, which is isomorphic to \widehat{S}^\circ(2)
-J := prim1[2];
-P := Generic(J);
-J0 := ideal<P | P.1-P.3, P.2-P.4, P.1+P.2-1,8*P.1*P.2-P.5>;
-assert J0 eq J;
+J2 := prim1[2];
+P := Generic(J2);
+J20 := ideal<P | P.1-P.3, P.2-P.4, P.1+P.2-1,8*P.1*P.2-P.5>;
+assert J20 eq J2;
+
+// check bt = -3/2
+bt := -3/2;
+F := QQ;
+A, gen, frob := M4A(bt);
+I := IdempotentIdeal(A);
+
+prim := RadicalDecomposition(I);    
+assert #prim eq 11;
+prim0 := [ J : J in prim | Dimension(J) eq 0];
+prim1 := [ J : J in prim | Dimension(J) ne 0];
+
+t1 := MiyamotoInvolution(A.1);
+t2 := MiyamotoInvolution(A.2);
+phi := PermutationMatrix(F, [2,1,4,3,5]);
+                 
+// phi is the automorphism which switches the generating axes
+assert forall{ <i,j> : i,j in [1..4] | (A.i*phi)*(A.j*phi) eq (A.i*A.j)*phi};
+Miy := sub<GL(5,F) | t1,t2>;
+G := sub<GL(5,F) | t1,t2,phi>;
+
+// Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
+assert Order(Miy) eq 4;
+assert Order(G) eq 8;
+
+FCl := AlgebraicClosure(F);
+rt1 := Sqrt(FCl!-bt*(bt-1/2));
+
+ACl := ChangeRing(A, FCl);
+frobCl := ChangeRing(frob, FCl);
+
+vars := [ Variety(J, FCl) : J in prim0];
+idems := &cat[ [ ACl![ t[i] : i in [1..5]] : t in var] : var in vars];
+
+// Simplify takes a long time, but partial is quick
+Simplify(FCl:Partial:=true);
+Prune(FCl);
+
+G_FCl := ChangeRing(G, FCl);
+orbs := {@ {@ ACl!u : u in Orbit(G_FCl, Vector(v))@} : v in idems @};
+Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
+
+assert #orbs eq 4;
+assert {* #o : o in orbs *} eq {* 1^^2, 4^^2 *};
+
+so, id := HasOne(ACl);
+
+assert id in idems;
+
+// v1 is now in the infinite family of idempotents
+v1 := id/2 + 1/rt1*( (1/4-bt)*(ACl.1+ACl.3) + 1/4*(ACl.2+ACl.4) + 2*ACl.5);
+assert v1[1]^2 + v1[2]^2 + v1[1]*v1[2]*2*(4*bt-1) eq 1;
+
+assert forall{ i : i in [1..4] | ACl.i in idems and id-ACl.i in idems};
 
 
+// Check singular locus
+A, gen, frob := M4A();
+II := IdealOfSingularPoints(A);
+primII := RadicalDecomposition(II);
 
+P := Generic(II);
+
+assert #primII eq 7;
+// Of these, four give a single point a_i where bt = 1/2
+for i in [1..4] do
+  assert ideal<P | [ P.j : j in [1..4] | j ne i] cat [P.i - 1, P.5, P.6-1/2]> in primII;
+end for;
+
+// Another two are also for bt = 1/2
+J21 := ideal<P | P.1-P.2, P.3-P.4, P.2+P.4 -1/2, 16*P.4^2-8*P.4 -1, P.5-1/2,P.6-1/2>;
+J22 := ideal<P | P.1-P.4, P.2-P.3, P.2+P.4 -1/2, 16*P.4^2-8*P.4 -1, P.5-1/2,P.6-1/2>;
+assert J21 ne J22;
+
+assert J21 in primII;
+assert J22 in primII;
+
+// The final ideal is contained in the double axis subalgebra
+J := ideal<P | P.1-P.3, P.2-P.4, P.5*(2*P.6-1) - 4*(1-P.1-P.2), (1+P.1+P.2)*P.5 -16*P.1*P.2>;
+
+assert J eq primII[1];
+
+// So the only singular points are for bt = 1/2, or idempotents in the double axis subalgebra which are idempotents for two diifferent bt.
+// Since intersections of irreducible components are contained in the singular locus, we have found all the idempotents
 
 // only nilpotent elements are in the nilpotent ideal spanned by A.5
 N := NilpotentIdeal(A);

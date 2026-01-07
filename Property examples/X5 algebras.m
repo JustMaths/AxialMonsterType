@@ -1,14 +1,14 @@
+/*
+******************************
+
+Code to verify properties of Monster type axial algebras with the X(5) axet
+
+******************************
+*/
 AttachSpec("../2-gen Monster.spec");
 AttachSpec("../../AxialTools/AxialTools.spec");
 
 QQ := Rationals();
-/*
-******************************
-
-X(5) axet
-
-******************************
-*/
 // =========================================================
 //
 // 5A(al, (5al-1)/8)

@@ -1,8 +1,21 @@
+/*
+******************************
+
+Code to verify properties of Monster type axial algebras with the X(3) axet
+
+******************************
+*/
 AttachSpec("../2-gen Monster.spec");
 AttachSpec("../../AxialTools/AxialTools.spec");
 load "Find idempotents.m";
 
 QQ := Rationals();
+
+// =========================================================
+//
+// 3A(al, bt)
+//
+// =========================================================
 
 // Get the algebra, generators and the frobenius form
 A, gen, frob := M3A();
@@ -259,6 +272,7 @@ assert e*f eq -(-1/2)*z;
 
 // Look at the idempotents
 
+// ---------------------------------------------
 A, gen, frob := M3A();
 F<al,bt> := BaseRing(A);
 
@@ -270,7 +284,7 @@ assert Order(G) eq 6; // Needed to ensure Magma knows the order of the group ove
 
 // Check for any odd values of al,bt giving more idempotents
 
-II, I := IdealOfSingularPoints(A);
+II := IdealOfSingularPoints(A);
 
 prim := RadicalDecomposition(II);
 
@@ -285,9 +299,11 @@ Good := [ J : J in prim | P.5-1/2 notin Basis(J)];
 
 assert #[ J : J in Good | P.6-1/2 notin Basis(J)] eq 0;
 
-// So there are no singular points
+// So there are no singular points we need to consider
 
+// ---------------------------------------------
 
+// Examine the generic case
 
 FCl := AlgebraicClosure(F);
 // Need to add one root
@@ -389,6 +405,105 @@ assert coord[3] eq -(2*al-1)*(2*bt-1);
 
 assert IsIdempotent(id-y);
 
+// Check to see whether there are any idempotents (for any value of al or bt) which have the same char  poly as an axis.
+
+poss := FindMatchingIdempotents(A.1, orbs);
+
+assert #poss eq 1;
+// There is one case which we need to examine
+
+// this is for id - a_i
+p := CharacteristicPolynomial(id-A.1) - CharacteristicPolynomial(A.1);
+P<t> := Parent(p);
+
+assert p eq (al+bt-1)*t*(2*t^2 -3*t +1);
+
+// This can be identically zero iff al+bt-1 = 0
+// Set bt = 1-al
+
+FF<Al> := FunctionField(QQ);
+Bt := 1-Al;
+A, gen, frob := M3A(Al, Bt);
+
+so, id := HasOne(A);
+assert so;
+assert HasMonsterFusionLaw(id-A.1:fusion_values:=[Al,Bt]);
+// So we have 3 more Monster type axes.
+
+// This gives six in total.  We now need to identify the automorphism group
+// It must act faithfully on this set, since the axes generate the algebra.
+/*
+Let S be the set of six axes.
+Let a,b in X.  Then a*b = 0 iff b = id-a
+
+Now consider the action of G := Aut on S.  Let a and b now be two of the original axes.  The stabiliser of a must fix id-a, so the stabiliser G_a acts on the remaining four axes.  Consider the stabiliser in G_a of b. Since it fixes a and b and these generate the algebra, it must fix the entire algebra.  Hence G_ab = 1.  So by Orbit-Stabiliser Theorem, G can have order at most 6*4 = 24
+
+*/
+
+// In fact now, the fusion law is C_2 x C_2 graded as Bt*Bt = {1,0}
+evals1, espace1, FL1 := IdentifyFusionLaw(A.1: eigenvalues:=[1,0,Al,Bt]);
+evals2, espace2, FL2 := IdentifyFusionLaw(id-A.1: eigenvalues:=[1,0,Al,Bt]);
+
+// We know that the eigenspaces for id-A.1 are the same as those for A.1
+assert Set(espace1) eq Set(espace2);
+
+// So the fusion law is C_2 x C_2 graded by al and bt
+Gr, gr := Grading(FL1);
+assert Order(Gr) eq 4;
+assert not IsCyclic(Gr);
+assert Order(4@gr) eq 2;
+assert Order(3@gr) eq 2;
+assert 3@gr ne 4@gr;
+
+t1_bt := MiyamotoInvolution(A.1, Bt);
+t1_al := MiyamotoInvolution(A.1, Al);
+assert MiyamotoInvolution(id-A.1, Bt) eq t1_al;
+t2_bt := MiyamotoInvolution(A.2, Bt);
+t2_al := MiyamotoInvolution(A.2, Al);
+assert MiyamotoInvolution(id-A.2, Bt) eq t2_al;
+
+G := sub<GL(4,FF) | t1_bt, t1_al, t2_bt, t2_al>;
+assert Order(G) eq 24;
+
+// So this is the automorphism group, which is the Miyamoto group wrt just the grading for bt and the six axes.
+// Also, the Miyamoto of the C_2 x C_2-graded fusion law.
+
+// t1_bt switches A.2 and A.3 and so also switches id-A.2 and id-A.3
+// t1_al switches A.2 and id-A.3
+assert A.2*t1_al eq id-A.3;
+assert A.3*t1_al eq id-A.2;
+
+// We know that t1_bt*t2_bt is an element of order three which permutes A.1, A.2, A.3 and so also id-A.i
+// [t1_al, t1_bt] = 1
+
+// So t1_al*(t1_bt*t2_bt)*t1_al
+assert A.3* t1_al*(t1_bt*t2_bt)*t1_al eq id -A.1;
+// So <t1_bt*t2_bt>, which is the Sylow 3-subgroup is not normal
+
+assert Order(t1_al*t2_al*t2_bt) eq 4;
+
+assert t1_bt*(t1_al*t2_al*t2_bt)*t1_bt eq t2_bt*t2_al*t1_al;
+// So this generates a dihedral group of order 8, which must be the Sylow 2-subgroup.
+
+// Hence G must be S_4.
+
+assert GroupName(G) eq "S4";
+
+// Look at the action of G on the six axes.  It is the same as the action of S_4 on the transpositions.
+
+// --------------------------------------------
+/*
+
+We have three exceptional situations to check:
+
+ 3*al-bt-1 = 0
+ 2*al*bt-al-bt-1 = 0
+ 3*al^2 + 3*al*bt - bt - 1 = 0
+
+
+
+*/
+
 // --------------------------------------------
 
 // Look at characteristic 3
@@ -454,9 +569,34 @@ assert id - y notin o1;
 
 assert exists(o1_pair){o : o in orbs | id-y in o};
 
+poss := FindMatchingIdempotents(A.1, orbs);
+assert #poss eq 1;
 
+// Again we have the possibility that id-A.1 as above
 
+// this is for id - a_i
+p := CharacteristicPolynomial(id-A.1) - CharacteristicPolynomial(A.1);
+P<t> := Parent(p);
 
+assert p eq (al+bt-1)*t*(2*t^2 +1);
+// so only possibility again is that bt = 1-al
+// analysis above did not depend on char not 3
+FF<Al> := FunctionField(GF(3));
+Bt := 1-Al;
+A, gen, frob := M3A(Al, Bt);
+
+so, id := HasOne(A);
+assert so;
+assert HasMonsterFusionLaw(id-A.1:fusion_values:=[Al,Bt]);
+t1_bt := MiyamotoInvolution(A.1, Bt);
+t1_al := MiyamotoInvolution(A.1, Al);
+assert MiyamotoInvolution(id-A.1, Bt) eq t1_al;
+t2_bt := MiyamotoInvolution(A.2, Bt);
+t2_al := MiyamotoInvolution(A.2, Al);
+assert MiyamotoInvolution(id-A.2, Bt) eq t2_al;
+
+G := sub<GL(4,FF) | t1_bt, t1_al, t2_bt, t2_al>;
+assert GroupName(G) eq "S4";
 
 //---------------------------------------------------
 
@@ -511,6 +651,36 @@ assert y eq (Al+1/3)/(2*Al^2)*A.1 - r*(A.2 + A.3) - r*(Al+1)/Al^2*A.4;
 
 // A.4 is the only nilpotent element up to scaling
 
+poss := FindMatchingIdempotents(A.1, orbs);
+assert #poss eq 2;
+
+assert poss[1,1] eq x;
+assert poss[2,1] eq orbs[4,1];
+
+// this is for x
+p := CharacteristicPolynomial(AdjointMatrix(x)) - CharacteristicPolynomial(AdjointMatrix(A.1));
+P<t> := Parent(p);
+
+assert p eq (2*Al-1)/Al^2/(3*Al-1)*(
+          Al*(Al - 1)*t^3 + (Al + 1)*(6*Al^3 - 3*Al^2 + 1)/4*t^2 +
+          -(6*Al^4 + 3*Al^3 + Al^2 - 3*Al + 1)/4*t);
+
+// In 3A, al ne 1/2 and in this case, al ne 1/3, so, as al ne 0,1, this poly can never be identically zero.
+
+// this is for id - a_i
+p := CharacteristicPolynomial(AdjointMatrix(y)) - CharacteristicPolynomial(AdjointMatrix(A.1));
+P<t> := Parent(p);
+
+assert p eq (2*Al - 1)*(Al + 1)/Al^2/(3*Al-1)*(Al*t^3
+                       + 3*(Al - 1)*(2*Al^2 + Al + 1)/4*t^2
+                       - (6*Al^3 - 3*Al^2 + 4*Al - 3)/4*t);
+
+// Al is not 1/2, 1/3,1, so the only posibility to check here is Al = -1
+
+assert Evaluate(Bt,-1) eq 1/2;
+// So Al can't be -1 either as we assume that Bt is not 1/2 (This is when 3A \cong IY3)
+
+
 //---------------------------------------------------
 
 // Now suppose 3*al-bt-1 = 0
@@ -549,6 +719,16 @@ assert id eq -2/3/Al^2*A.4;
 // orbits of size 3
 // axes and 1-axes
 
+poss := FindMatchingIdempotents(A.1, orbs);
+assert #poss eq 1;
+
+p := CharacteristicPolynomial(id-A.1) - CharacteristicPolynomial(A.1);
+P<t> := Parent(p);
+
+assert p eq (Al+Bt-1)*t*(2*t^2 -3*t +1);
+
+// So once again we need to consider Bt = 1-Al
+// But also Bt = 3*AL-1, so we get Al = 1/2 and Bt = 1/2, so this can't happen
 
 //---------------------------------------------------
 
@@ -584,6 +764,21 @@ assert id eq -2/3*(2*Al-1)^2/Al^4*A.4;
 
 // orbits of size 3
 // axes and 1-axes
+
+poss := FindMatchingIdempotents(A.1, orbs);
+assert #poss eq 1;
+
+p := CharacteristicPolynomial(id-A.1) - CharacteristicPolynomial(A.1);
+P<t> := Parent(p);
+
+assert p eq (Al+Bt-1)*t*(2*t^2 -3*t +1);
+
+// So once again we need to consider Bt = 1-Al
+// In this case, Bt := (Al+1)/(2*Al-1);
+poly := Al+1 - (2*Al-1)*(1-Al);
+assert poly eq 2*(Al^2-Al+1);
+
+// This is possible, but it comes under the analysis above.
 
 // Nilpotent elements are scalar multiples of
 n1 := -Al^2*(2*Al^2-2*Al-1)/(2*Al-1)^2*A.1 + Al^2*(A.2+A.3) + 2*A.4;

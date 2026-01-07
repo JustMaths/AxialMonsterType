@@ -3,6 +3,8 @@
 Some code to find idempotents
 
 */
+QQ := Rationals();
+
 function IdempotentIdeal(A)
   F := BaseRing(A);
   P := PolynomialRing(F, Dimension(A));
@@ -130,20 +132,18 @@ function FindAllIdempotentsSubspace(A, U)
 end function;
   
   
-// Given an idempotent x and a sequence of ideampotents L,
+// Given an idempotent x and a sequence of orbits of idempotents orbs,
 // find those in L which have the same characteristic polynomial as x
-// returns any possibilities with the characteristic/poly in variables which needs to be satisfied
+// returns any possibilities with the characteristic poly in variables which needs to be satisfied
 
-FindMatchingIdempotents := function(x, L)
+FindMatchingIdempotents := function(x, orbs)
   n := Degree(x);
-  char_x := CharacteristicPolynomial(x);
+  char_x := CharacteristicPolynomial(AdjointMatrix(x)); // Seems to be a bug in Char poly??
   assert Coefficient(char_x, n) eq 1;
-  pos := Index(L, x);
-  if pos ne 0 then
-    Remove(~L, x);
-    assert x notin L;
-  end if;
-  char_L := [ CharacteristicPolynomial(y) : y in L];
+  
+  L := [ o[1] : o in orbs | x notin o ];
+  
+  char_L := [ CharacteristicPolynomial(AdjointMatrix(y)) : y in L];
   assert forall{ p : p in char_L | Coefficient(p, n) eq 1};
 
   FCl := BaseRing(Parent(x));
@@ -152,56 +152,72 @@ FindMatchingIdempotents := function(x, L)
   else
     F := FCl;
   end if;
-  P := RingOfIntegers(F);
-  ZP := ChangeRing(P, Integers());
+  P := RingOfIntegers(F);  // This should now be a polynomial ring over the integers Z[t]
+  // assert BaseRing(P) eq Integers();
 
   fail := [];
   for i-> py in char_L do
     print i;
     p := py - char_x;
     
+    if p eq 0 then
+      // we have found another class of axis!
+      print "  Found new orbit of Monster axis.";
+    end if;
+    
     coeffs := [ q : q in Coefficients(p) | q ne 0];
-    so, cond := CanChangeUniverse(coeffs, P);
+    so, cond := CanChangeUniverse(coeffs, F);
     
     if so then
-      ds := [ LCM([ Denominator(e) : e in Eltseq(q)]) : q in cond];
+      ds := LCM([ Denominator(q) : q in cond]);
       
-      // Doing each of these seperately - but below do all together???  
-      cond := [ ZP!(ds[i]*cond[i]) : i in [1..#cond]];
+      cond := [ P!(ds*cond[i]) : i in [1..#cond]];
       gcd := GCD(cond);
 
-      print gcd;
-      if gcd ne 1 and gcd mod 2 ne 0 then
+      if gcd eq 1 or (Parent(gcd) cmpeq QQ and gcd mod 2 eq 0) then
+        // either gcd is 1 or a power of two, which is invertible
+        print "gcd is ", gcd;
+      else
+        print "  Fail.  gcd is ", gcd;
         Append(~fail, <L[i], py, gcd>);
       end if;
     else
       // the coefficients of p involve elements in the algebraically closed field
       Aff := AffineAlgebra(FCl);
+      V, phi := VectorSpace(Aff);
       
       coeffs := ChangeUniverse(coeffs, Aff);
       if forall{ q : q in coeffs | IsUnivariate(q)} then
-      /*
-        coeffs := [ UnivariatePolynomial(q) : q in coeffs];
-        // clear each of the denominators
-        denom := LCM(Flat([[Denominator(e) : e in Eltseq(q)] : q in coeffs]));
-        coeffs := [ denom*q : q in coeffs];
-        denom := LCM(Flat([[[Denominator(t) : t in Eltseq(P!e) | t ne 0] : e in Eltseq(q)] : q in coeffs]));
-        coeffs := [ denom*q : q in coeffs];
+        // check they are the same variable
+        assert exists(q){ q : q in coeffs | #Monomials(q) ne 1};
+        var := Monomials(q)[1];
+        deg := Degree(MinimalPolynomial(var));
         
-        Ft := Universe(coeffs);
-        assert F eq BaseRing(Ft);
-        assert P eq RingOfIntegers(F);
-        Pt := PolynomialRing(P);
-        Zt := PolynomialRing(ZP);
-        coeffs := ChangeUniverse(ChangeUniverse(coeffs,Pt), Zt);
-        
-        gcd := GCD(coeffs);
-        if gcd ne 1 and gcd mod 2 ne 0 then
-          Append(~fail, <L[i], py, gcd>);
+        if forall{ q : q in coeffs | Set(Monomials(q)) subset {Aff!1} join { var^i : i in [1..deg-1]}} then      
+          coeffs := [ UnivariatePolynomial(q) : q in coeffs];
+          // clear each of the denominators
+          denom := LCM(Flat([[Denominator(e) : e in Eltseq(q)] : q in coeffs]));
+          coeffs := [ denom*q : q in coeffs];
+          
+          // change ring to be over the polynomial ring          
+          Ft := Universe(coeffs);
+          assert F eq BaseRing(Ft);
+          assert P eq RingOfIntegers(F);
+          
+          Pt := PolynomialRing(P);
+          coeffs := ChangeUniverse(coeffs,Pt);
+          
+          gcd := GCD(coeffs);
+          if gcd eq 1 or (Parent(gcd) cmpeq QQ and gcd mod 2 eq 0) then
+            // either gcd is 1 or a power of two, which is invertible
+            print "gcd is ", gcd;
+          else
+            print "  Fail.  gcd is ", gcd;
+            Append(~fail, <L[i], py, gcd>);
+          end if;
+        else
+          Append(~fail, <L[i], py, "multivariate">);
         end if;
-        */
-        // Is GCD the right thing above??
-        Append(~fail, <L[i], py, "univariate">);
       else
         // multivariate - need to be more careful
         // do by hand???
@@ -231,6 +247,12 @@ function SquareFreePart(x)
   
   return sqrfree(Numerator(x))/sqrfree(Denominator(x));
 end function;
+
+// ==================================================================
+//
+//     Function to return a fraction in a field with the numerator and denominator factorised
+//
+// ==================================================================
 
 // Only works for characteristic 0
 function Pretty(x)
@@ -285,6 +307,12 @@ function Pretty(x)
   return sgn cat Factorisation(Numerator(nu/du)) cat num_f, Factorisation(Denominator(nu/du)) cat denom_f;
 end function;
 
+// ======================================================================================
+//
+//     Function to print out field elements in Magma code in fully factorised fractions
+//
+// ======================================================================================
+
 function PrettyMagma(x)
   F := Parent(x);
   assert Characteristic(F) eq 0;
@@ -333,6 +361,12 @@ function PrettyMagma(x)
   end if;
 end function;
 
+// ==================================================================
+//
+//     Functions to print out field elements nicely in LaTeX form
+//
+// ==================================================================
+// helper function
 function LaTeX(y)
   FF := Parent(y);
   names := Names(FF);
@@ -348,6 +382,8 @@ function LaTeX(y)
   return y_str;
 end function;
 
+
+// Function to print out a field element in LaTeX code
 function LaTeXprint(x)
   F := Parent(x);
   assert Characteristic(F) eq 0;

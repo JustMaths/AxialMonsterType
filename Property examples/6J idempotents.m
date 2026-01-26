@@ -80,7 +80,7 @@ zetas := [Sqrt(sqrs[i]) : i in [1..3]];
 Simplify(FCl: Partial:=true);
 Prune(FCl);
 
-// We require that the square roots are chose with compatable signs:
+// We require that the square roots are chosen with compatable signs:
 
 signs := [ <i,j> : i,j in [+1,-1]];
 
@@ -348,6 +348,16 @@ o4 := ChangeUniverse(Orbit(GG, Vector(u4)), ACl);
 assert #o4 eq 6;
 
 assert InnerProduct(u4*frobCl, u4) eq 1/2/(7*bt+1)*( 9 - (7*bt+1) +3*bt*(2*bt-1)*(7*bt-1)*rt3);
+
+/*
+// May be expensive
+evals, espace, FL := IdentifyFusionLaw(u4);
+assert #evals eq 7;
+Gr, gr := Grading(FL);
+assert Order(Gr) eq 2;
+assert &+[ espace[i] : i in [1..7] | i@gr eq Gr.1 ] eq sub<V|V.2-V.6, V.3-V.5>;
+// So Miyamoto involution is \tau_1
+*/
 
 assert id-u4 notin o4;
 o4_pair := ChangeUniverse(Orbit(GG, Vector(id-u4)), ACl);

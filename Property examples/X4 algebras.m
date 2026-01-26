@@ -288,25 +288,43 @@ assert exists(o2_pair){ o : o in orbs | id-v2 in o};
 assert IsIdempotent(id-v2);
 assert InnerProduct((id-v2)*frobCl,(id- v2)) eq 2 +2*rt2;
 
+// TODO comment what the bad values are ie what we divide by
 
 
-// There are nilpotent elements too
-N := NilpotentIdeal(A);
-primN := PrimaryDecomposition(N);
-assert #primN eq 2;
 
-JN := primN[1];
-P := Generic(JN);
-assert Dimension(JN) eq 1;
+// ---------------------------------------------------
+//
+// Check singular locus
 
-// The equations you get from requiring the coefficients in the double axis subalgebra to give a nilpotent
-JN0 := ideal<P | P.1-P.3, P.2-P.4, P.1+P.2+(bt-1/2)/2*P.5, P.1^2 + (bt-1/2)/2*( P.1*P.5 - 1/16*P.5^2)>;
-assert JN0 eq JN;
+A, gen, frob := M4A();
+II := IdealOfSingularPoints(A);
+primII := RadicalDecomposition(II);
 
-// This is precisely the 1-dimensional family of vectors in S(dl) which have length 0.
+P := Generic(II);
 
-// The 0-dim ideal is just the zero vector
-assert Variety(primN[2], FCl) eq [<0,0,0,0,0>];
+assert #primII eq 7;
+// Of these, four give a single point a_i where bt = 1/2
+for i in [1..4] do
+  assert ideal<P | [ P.j : j in [1..4] | j ne i] cat [P.i - 1, P.5, P.6-1/2]> in primII;
+end for;
+
+// Another two are also for bt = 1/2
+J21 := ideal<P | P.1-P.2, P.3-P.4, P.2+P.4 -1/2, 16*P.4^2-8*P.4 -1, P.5-1/2,P.6-1/2>;
+J22 := ideal<P | P.1-P.4, P.2-P.3, P.2+P.4 -1/2, 16*P.4^2-8*P.4 -1, P.5-1/2,P.6-1/2>;
+assert J21 ne J22;
+
+assert J21 in primII;
+assert J22 in primII;
+
+// The final ideal is contained in the double axis subalgebra
+J := ideal<P | P.1-P.3, P.2-P.4, P.5*(2*P.6-1) - 4*(1-P.1-P.2), (1+P.1+P.2)*P.5 -16*P.1*P.2>;
+
+assert J eq primII[1];
+
+// So the only singular points are for bt = 1/2, or idempotents in the double axis subalgebra which are idempotents for two diifferent bt.
+// Since intersections of irreducible components are contained in the singular locus, we have found all the idempotents
+
+
 
 
 // Check bt eq 1/2
@@ -424,34 +442,6 @@ assert v1[1]^2 + v1[2]^2 + v1[1]*v1[2]*2*(4*bt-1) eq 1;
 assert forall{ i : i in [1..4] | ACl.i in idems and id-ACl.i in idems};
 
 
-// Check singular locus
-A, gen, frob := M4A();
-II := IdealOfSingularPoints(A);
-primII := RadicalDecomposition(II);
-
-P := Generic(II);
-
-assert #primII eq 7;
-// Of these, four give a single point a_i where bt = 1/2
-for i in [1..4] do
-  assert ideal<P | [ P.j : j in [1..4] | j ne i] cat [P.i - 1, P.5, P.6-1/2]> in primII;
-end for;
-
-// Another two are also for bt = 1/2
-J21 := ideal<P | P.1-P.2, P.3-P.4, P.2+P.4 -1/2, 16*P.4^2-8*P.4 -1, P.5-1/2,P.6-1/2>;
-J22 := ideal<P | P.1-P.4, P.2-P.3, P.2+P.4 -1/2, 16*P.4^2-8*P.4 -1, P.5-1/2,P.6-1/2>;
-assert J21 ne J22;
-
-assert J21 in primII;
-assert J22 in primII;
-
-// The final ideal is contained in the double axis subalgebra
-J := ideal<P | P.1-P.3, P.2-P.4, P.5*(2*P.6-1) - 4*(1-P.1-P.2), (1+P.1+P.2)*P.5 -16*P.1*P.2>;
-
-assert J eq primII[1];
-
-// So the only singular points are for bt = 1/2, or idempotents in the double axis subalgebra which are idempotents for two diifferent bt.
-// Since intersections of irreducible components are contained in the singular locus, we have found all the idempotents
 
 // only nilpotent elements are in the nilpotent ideal spanned by A.5
 N := NilpotentIdeal(A);
@@ -464,6 +454,26 @@ NN := Radical(N);
 
 // NN is the ideal spanned by requiring the coefficients of the axes being 0, ie the nilpotent ideal spanned by A.5
 assert ideal<P|P.1, P.2, P.3, P.4> eq NN;
+
+// There are nilpotent elements too
+A, gen, frob := M4A();
+
+N := NilpotentIdeal(A);
+primN := PrimaryDecomposition(N);
+assert #primN eq 2;
+
+JN := primN[1];
+P := Generic(JN);
+assert Dimension(JN) eq 1;
+
+// The equations you get from requiring the coefficients in the double axis subalgebra to give a nilpotent
+JN0 := ideal<P | P.1-P.3, P.2-P.4, P.1+P.2+(bt-1/2)/2*P.5, P.1^2 + (bt-1/2)/2*( P.1*P.5 - 1/16*P.5^2)>;
+assert JN0 eq JN;
+
+// This is precisely the 1-dimensional family of vectors in S(dl) which have length 0.
+
+// The 0-dim ideal is just the zero vector
+assert Variety(primN[2], FCl) eq [<0,0,0,0,0>];
 
 // =========================================================
 //

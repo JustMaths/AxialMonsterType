@@ -10,7 +10,6 @@ Attach("../Yabe_algebras.m");
 
 load "Find idempotents.m";
 QQ := Rationals();
-ZZ := Integers();
 // =========================================================
 //
 // IY3
@@ -199,13 +198,10 @@ assert A.1+A.2 in R;
 // So the quotient is 3C(al)
 
 
-
-
-
-
-
-
+// -------------------------------------------
+//
 // Check isomorphisms
+
 // mu = -1 gives 3 axes
 M := Matrix(Rationals(),2,2,[1,-1/2,-1/2,1]);
 A, frob := SplitSpinFactor(M);
@@ -311,7 +307,7 @@ F<al> := BaseRing(A);
 
 assert not HasOne(A);
 
-assert HasMonsterFusionLaw(A.3);
+assert HasMonsterFusionLaw(A.3: fusion_values:=[al, 1/2]);
 u4 := A.1-4*A.2+6*A.3-4*A.4+A.5;
 v0_2 := 2*A.3 - (A.2+A.4) +2/(al-1/2)*A.6;
 
@@ -589,15 +585,53 @@ assert A.1@quo2 eq B2.1 and A.2@quo2 eq B2.2;
 assert B2.1*B2.2 eq 1/2*(B2.1+B2.2);
 // so the quotient is S(2)^\circ
 
+// ---------------------------------
+//
+// We need some additional identities for the idempotents section
+
+zp := -(2*al-1)/8/al*y;
+
+u2p := (u2+4*z);
+assert u2p^2 eq 2*al*(al-1)*u4;
+assert u2p*u3 eq 0;
+
+assert A.1*A.2 eq 1/2*(A.1+A.2) + zp + (2*al-1)/8/al*u2p;
+
+assert A.1*zp eq (2*al-1)/16/al*(u3 +3/2*u4);
+assert A.2*zp eq 0;
+assert zp^2 eq -(2*al-1)/32/al*u4;
+
+assert A.1*u2p eq al*u2p + (2*al-1)/2*u3 + (4*al-3)/4*u4;
+assert A.2*u2p eq al*u2p;
+assert zp*u2p eq 0;
+
+assert A.1*u3 eq 1/2*u3+3/4*u4;
+assert A.2*u3 eq 1/2*u3+1/4*u4;
+assert zp*u3 eq 0;
+
+
+K<lm, mu2, mu3, m4> := PolynomialRing(F, 4);
+
+AK := ChangeRing(A, K);
+Y := lm*AK.1 + (1-lm)*AK.2 + 2*lm*(1-lm)*AK!Eltseq(zp);
+
+X := Y + mu2*AK!Eltseq(u2p) + mu3*AK!Eltseq(u3) + mu4*AK!Eltseq(u4);
+
+// can use this to check the polys are correct
+// Slight error in next line, but it works out as seen below
+//assert X^2 eq Y+ (-(2*al - 1)*lm*(lm-1)/4/al + 2*al*mu2)*AK!Eltseq(u2p) + mu3*AK!Eltseq(u3)+ 1/2*(-(2*al - 1)/(4*al)*(lm^2 + lm + -2)*lm^2 + (4*al - 3)*lm*mu2 + 4*al*(al - 1)*mu2^2 + (2*lm + 1)*mu3)*AK!Eltseq(u4);
 
 
 // --------------------------------------------------------
 //
 // idempotents
 //
+// --------------------------------------------------------
 A, gens, frob := IY5();
 F<al> := BaseRing(A);
 I := IdempotentIdeal(A);
+P := Generic(I);
+
 prim := PrimaryDecomposition(I);
 
 assert #prim eq 2;
@@ -609,19 +643,150 @@ assert exists(J2){ J : J in prim | Dimension(J) eq 2};
 assert VarietySizeOverAlgebraicClosure(J0) eq 1;
 assert Variety(J0) eq [<0,0,0,0,0,0>];
 
-// Don't understand J2
-// This is complicated
+// For J2, z = 0
+assert P.6 in J2;
+// sum of the axes is 1 in J2
+assert &+[P.i : i in [1..5]] -1 in J2;
 
-// Idea to test:
-// In the forbidden paper, there is a formula for an axis.
-// So we know the coefficients.
-// test to see whether the coefficients are exactly the 
+KK<s,t> := PolynomialRing(F,2);
+AA := ChangeRing(A,KK);
+Y := s*AA.1 + (1-s)*AA.2 + 2*s*(1-s)*AA!Eltseq(zp);
+X:= s*(s-1)/4/al*AA!Eltseq(u2p) + t*AA!Eltseq(u3) + (s^2*(1-s^2)/4+(1+2*s)*t)/2*AA!Eltseq(u4) + Y;
+
+assert IsIdempotent(X);
+
+assert CharacteristicPolynomial(AdjointMatrix(X)) eq CharacteristicPolynomial(AdjointMatrix(AA.1));
+assert IsIndependent([A.1,A.2,zp,u2p,u3,u4]);
+// Group must be block triangular wrt 
+
+AA := ChangeRing(AA, FieldOfFractions(KK));
+X := AA!Eltseq(ChangeRing(X, FieldOfFractions(KK)));
+assert InnerProduct(Vector(X)*ChangeRing(frob, FieldOfFractions(KK)), Vector(X)) eq 1;
+
+X01 := (s+2)*AA.1 -2*(3*s+4)*AA.3 + 8*(s+1)*AA.4 -(3*s+2)*AA.5 -16/(2*al-1)*AA.6;
+X02 := (s+2)*AA.2 -(3*s+5)*AA.3 + (3*s+4)*AA.4 -(s+1)*AA.5 -4/(2*al-1)*AA.6;
+Xal := (s+1)*(s+2)*AA.1 -2*(s+2)*(2*s+1)*AA.2 + 2*(3*s^2+6*s+1)*AA.3 -2*s*(2*s+3)*AA.4
+            +s*(s+1)*AA.5 + 8*AA.6;
+Xbt1 := (2*s^3 + 8*s^2 + 15*s - 4*t + 10)*AA.1 -2*(6*s^3 + 16*s^2 + 15*s - 12*t + 5)*AA.3
+          +16*(s^3 + 2*s^2 + s - 2*t)*AA.4 - (6*s^3 + 8*s^2 + s - 12*t)*AA.5;
+Xbt2 := (2*s^3 + 8*s^2 + 15*s - 4*t + 10)*AA.2 -(6*s^3 + 20*s^2 + 29*s - 12*t + 15)*AA.3
+          + (6*s^3 + 16*s^2 + 17*s - 12*t + 6)*AA.4 -(2*s^3 + 4*s^2 + 3*s - 4*t + 1)*AA.5;
+
+assert X*X01 eq 0;
+assert X*X02 eq 0;
+assert X*Xal eq al*Xal;
+assert X*Xbt1 eq 1/2*Xbt1;
+assert X*Xbt2 eq 1/2*Xbt2;
 
 
+assert X eq   1/8*(-s*(s^3-5*s-4) + 4*(2*s+3)*t)*AA.1
+            + 1/2*(s^2*(s^2-3) -2*(4*s+5)*t + 2)*AA.2
+            + 1/4*(-s*(3*s^3-5*s +2) +24*(s+1)*t)*AA.3
+            + 1/2*(-s^2*(1-s^2) - 2*(4*s+3)*t)*AA.4
+            + 1/8*(s^2*(1-s^2) + 4*(2*s+1)*t)*AA.5;
 
+// We know the form of the axis a_n.
+// When does X equal a_n?
 
+P<n,s,t> := PolynomialRing(Rationals(), 3);
 
+eq1 := 1/24*(n-1)*(n-2)*(n-3)*(n-4) - 1/8*(-s*(s^3-5*s-4) + 4*(2*s+3)*t);
+eq2 := -1/6*n*(n-2)*(n-3)*(n-4) - 1/2*(s^2*(s^2-3) -2*(4*s+5)*t + 2);
+eq3 := 1/4*n*(n-1)*(n-3)*(n-4) - 1/4*(-s*(3*s^3-5*s +2) +24*(s+1)*t);
+eq4 := -1/6*n*(n-1)*(n-2)*(n-4) - 1/2*(-s^2*(1-s^2) - 2*(4*s+3)*t);
+eq5 := 1/24*n*(n-1)*(n-2)*(n-3) - 1/8*(s^2*(1-s^2) + 4*(2*s+1)*t);
 
+eq1 *:= 24;
+eq2 *:= -6;
+eq3 *:= 4;
+eq4 *:= -6;
+eq5 *:= 24;
 
+assert n*eq1 - (n-1)*eq2 eq n*(-6*(s*(s+2) + t+1)) + 3*s^2*(s^2-3) -6*(4*s+5)*t +6;
+assert (n-1)*eq2 - (n-2)*eq3 eq n*(2*(-s*(2*s+1) -3*(t-1))) + s*(3*s^3-s+4) -6*(4*s+3)*t -6;
+assert (n-2)*eq3 - (n-3)*eq4 eq n*(-2*(s*(s-1)+3*t)) + s*(3*s^3 +s-4) -6*(4*s+1)*t;
+assert (n-3)*eq4 - (n-4)*eq5 eq n*(-6*t) + 3*( s^2*(s^2-1) - 2*(4*s-1)*t);
 
+// Now eliminate the n using the last equation each time
+
+e1 := 3*( s^2*(s^2-1) - 2*(4*s-1)*t)*(-6*(s*(s+2) + t+1)) +6*t*(3*s^2*(s^2-3) -6*(4*s+5)*t +6);
+e2 := 3*( s^2*(s^2-1) - 2*(4*s-1)*t)*(2*(-s*(2*s+1) -3*(t-1))) +6*t*(s*(3*s^3-s+4) -6*(4*s+3)*t -6);
+e3 := 3*( s^2*(s^2-1) - 2*(4*s-1)*t)*(-2*(s*(s-1)+3*t)) +6*t*( s*(3*s^3 +s-4) -6*(4*s+1)*t);
+
+e1 *:= 1/18;
+e2 *:= 1/6;
+e3 *:= 1/6;
+
+assert e3-e1 eq s*( s*(3*s^3 + s^2 - 3*s - 1) - 6*(3*s+1)*t);
+assert  e2-2*e3 eq s*( s*(-3*s^3 + 3*s^2 + 3*s - 3) + 18*(s-1)*t);
+
+// So either s = 0
+assert Evaluate(e1, 2,0) eq -12*t^2;
+// so t = 0 and hence x = 0
+
+// So can divide the two equations above through by s
+d1 := (e3-e1)/s;
+d2 := (e2-2*e3)/s;
+
+assert d1 + d2 eq 4*( s*(s^2-1) -6*t);
+
+// so t = 1/6*s*(s^2-1) is the solution
+
+assert Evaluate(e1, 3, 1/6*s*(s^2-1)) eq 0;
+assert Evaluate(e2, 3, 1/6*s*(s^2-1)) eq 0;
+assert Evaluate(e3, 3, 1/6*s*(s^2-1)) eq 0;
+
+// Find the value for n
+
+eq1n := Evaluate(eq1, 3, 1/6*s*(s^2-1));
+eq2n := Evaluate(eq2, 3, 1/6*s*(s^2-1));
+eq3n := Evaluate(eq3, 3, 1/6*s*(s^2-1));
+eq4n := Evaluate(eq4, 3, 1/6*s*(s^2-1));
+eq5n := Evaluate(eq5, 3, 1/6*s*(s^2-1));
+
+assert eq1n - eq5n eq 4*(-n^3 + 6*n^2 - 11*n - s^3 - 3*s^2 - 2*s + 6);
+assert eq2n - eq5n eq 3*(-n^3 + 5*n^2 - 6*n - s^3 - 2*s^2 + s + 2);
+assert eq3n - eq5n eq 2*(-n^3 + 4*n^2 - 3*n - s^3 - s^2 + 2*s);
+assert eq4n - eq5n eq -n^3 + 3*n^2 - 2*n - s^3 + s;
+
+d15 := (eq1n - eq5n)/4;
+d25 := (eq2n - eq5n)/3;
+d35 := (eq3n - eq5n)/2;
+d45 := eq4n - eq5n;
+
+assert d15-d45 eq 3*(n^2 - 3*n - s^2 - s + 2);
+assert d25-d45 eq 2*(n^2 - 2*n - s^2 + 1);
+assert d35-d45 eq n^2 - n - s^2 + s;
+
+d15_45 := (d15-d45)/3;
+d25_45 := (d25-d45)/2;
+d35_45 := d35-d45;
+
+assert d15_45 - d35_45 eq 2*(-n-s+1);
+assert d25_45 - d35_45 eq -n-s+1;
+
+// so n = s+1, t = 1/6*s*(s^2-1) is the solution
+
+// --------------------------------
+//
+// Check for singular points
+II := IdealOfSingularPoints(A);
+P2 := Generic(II);
+
+primII := RadicalDecomposition(II);
+assert #primII eq 2;
+
+// Can't have al = 1/2
+good := [ J : J in primII | P2.7-1/2 notin J ];
+assert #good eq 1;
+
+Jsing := good[1];
+// P.7 ie al does not feature in Jsing
+assert forall{ f : f in Basis(Jsing) | Evaluate(f,7,0) eq f};
+
+// So define a map back to P
+phi := hom<P2->P | [P.i : i in [1..6]] cat [0]>;
+
+assert Basis(Jsing)@phi eq Basis(J2);
+// So the ideal is the same as for J2
 

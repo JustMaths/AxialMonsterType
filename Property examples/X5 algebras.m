@@ -47,8 +47,13 @@ assert id eq 1/5/(al-bt)*A![1,1,1,1,1,0];
 // So the algebra always has an identity if the characteristic is not 5
 
 // No subalgebras to check
+// See below in idempotents for additional automorphism
 
-// Now check for ideals
+// ---------------------------------------------------
+//
+//     Ideals
+//
+// ---------------------------------------------------
 
 assert frob[1,2] eq 3/4*bt;
 // So the projection graph always has an edge between a_0 and a_1 since bt ne 0
@@ -60,12 +65,12 @@ assert Determinant(frob) eq -5^6/2^23*(al-bt)^2*(3*al-7)^5/bt;
 // We deal with al = 7/3, char not 5 below.
 
 // See bottom for proof that 5A \cong IY_5 in char 5.
-//  Look in IY5 file for char 5 case.
+// Look in IY5 file for char 5 case.
 // NB value of al makes no difference.
 
 // ---------------------------------------------------
 //
-// For al = 7/3
+// Ideals for al = 7/3
 //
 // ---------------------------------------------------
 A, gen, frob := M5A(7/3);
@@ -127,6 +132,35 @@ G := sub<GL(6,F) | t1,t2,phi>;
 assert Order(Miy) eq 10;
 assert Order(G) eq 20;
 
+//------------------------------------------
+//
+// Identify the singular points
+
+// takes ~20 secs
+II := IdealOfSingularPoints(A);
+P := Generic(II);
+
+// NB RadicalDecomposition is very slow.
+// tried this and left for a couple of days and it didn't finish
+
+// takes ~400 seconds
+prim := ProbableRadicalDecomposition(II);
+assert #prim eq 13;
+
+// alpha can't be 1, or 1/5 (al=1/5 gives bt = 0)
+poss := [ J : J in prim | P.7-1 notin J and P.7-1/5 notin J];
+assert forall{ J : J in poss | IsPrime(J) };
+
+assert #poss eq 10; // This is a guess based on probable decomp
+
+// For al = 1/2, axes and id-axes are singular
+Jaxes := [ ideal<P | [ P.j : j in [1..5] | j ne i] cat [P.i-1,P.6, P.7-1/2]> : i in [1..5]];
+Jaxes_id := [ ideal<P | [ P.j -16/25 : j in [1..5] | j ne i] cat [P.i+9/25,P.6, P.7-1/2]> : i in [1..5]];
+
+assert forall{ J : J in Jaxes cat Jaxes_id | J in poss };
+
+// Idempotents in the generic case
+
 I := IdempotentIdeal(A);
 
 // Takes about 120 secs
@@ -135,12 +169,15 @@ prim := PrimaryDecomposition(I);
 FCl := AlgebraicClosure(F);
 // Need to add roots
 // bt = (5*al-1)/8;
-f := (al^3-6*al^2+1);
+
+// NB al \neq 0, 1/5
+f := al^3-6*al^2+1;
 rt1 := Sqrt(FCl!(5*(1-5*al)/(3*al-7)));
 rt2 := Sqrt(FCl!5/al);
 rt3 := Sqrt(FCl!(2*al-1));
 rt4 := Sqrt(FCl!(1-5*al)/(al^3-6*al^2+1));
 
+// So bad points are al = 1/2, 7/3 and roots of f
 ACl := ChangeRing(A, FCl);
 frobCl := ChangeRing(frob, FCl);
 
@@ -151,13 +188,6 @@ idems := &cat[ [ ACl![ t[i] : i in [1..6]] : t in var] : var in vars];
 // Simplify takes a long time, but partial is quick
 Simplify(FCl:Partial:=true);
 Prune(FCl);
-
-/*
-if Rank(FCl) eq 5 then
-  // Magma has added a new root, but it is a combination of old ones
-  assert FCl.5 eq -2^4*rt3/rt2/rt4; // or maybe this: or FCl.5 eq 2^4*rt3/rt2/rt4;
-end if;
-*/
 
 G_FCl := ChangeRing(G, FCl);
 orbs := {@ {@ ACl!u : u in Orbit(G_FCl, Vector(v))@} : v in idems @};
@@ -181,6 +211,7 @@ v1 := id/2 + 1/10/(al-bt)*rt1*ACl.6;
 assert v1 in orbs[3];
 assert id - v1 in orbs[3];
 assert len(v1) eq 2^2/(3*al + 1);
+assert len(v1) eq 1/2/(al-bt);
 
 // The fusion law has four eigenvalues and is not graded
 evals, espaces, FL := IdentifyFusionLaw(v1);
@@ -199,6 +230,7 @@ v2 := id/2 + 1/5/al*rt1*( ACl.2+ACl.5 - (ACl.3+ACl.4) + (al-1)/8/(bt-al)*ACl.6);
 assert exists(o2){ o : o in orbs | v2 in o};
 assert id -v2 in o2;
 assert len(v2) eq 2^2/(3*al + 1);
+assert len(v2) eq 2^2/(3*al + 1);
 
 evals, espaces, FL := IdentifyFusionLaw(v2);
 assert #evals eq 6;
@@ -216,8 +248,8 @@ v3 := id/2 + ACl.1/2
            + rt2/10*( ACl.2+ACl.5 - (ACl.3+ACl.4) + bt/(bt-al)*ACl.6);
 
 assert exists(o3){ o : o in orbs | v3 in o};
-assert id -v3 notin o2;
-assert len(v3) eq 3*(al + 3)/2/(3*al + 1);
+assert id -v3 notin o3;
+assert len(v3) eq (1 + (al -bt)) /2/(al-bt);
 
 evals, espaces, FL := IdentifyFusionLaw(v3);
 assert #evals eq 5;
@@ -226,7 +258,7 @@ assert Order(GR) eq 2;
 assert MiyamotoInvolution(v2) eq t1;
 
 assert exists(o3_pair){ o : o in orbs | id-v3 in o};
-assert len(id-v3) eq (7-3*al)/2/(3*al + 1);
+assert len(id-v3) eq (1 - (al -bt)) /2/(al-bt);
 
 // The extra automorphism is related to a field automorphism exchanging rt2 for -rt2
 assert (v3 -id/2 -ACl.1/2)*phi_FCl eq -(v3 -id/2 -ACl.1/2);
@@ -238,7 +270,7 @@ v4 := id/2
          
 assert exists(o4){ o : o in orbs | v4 in o};
 assert id -v4 notin o4;
-assert len(v4) eq 1/(3*al + 1)*( (5*al - 1)/2*rt4 + 2^2);
+assert len(v4) eq (1+bt*rt4)/2/(al-bt);
 
 evals, espaces, FL := IdentifyFusionLaw(v4);
 assert #evals eq 6;
@@ -247,7 +279,7 @@ assert Order(GR) eq 2;
 assert MiyamotoInvolution(v2) eq t1;
 
 assert exists(o4_pair){ o : o in orbs | id-v4 in o};
-assert len(id-v4) eq 1/(3*al + 1)*( -(5*al - 1)/2*rt4 + 2^2);
+assert len(id-v4) eq (1-bt*rt4)/2/(al-bt);
 
 // The extra automorphism is related to a field automorphism fixing rt4
 assert (v4 -id/2)*phi_FCl + (v4-id/2) eq
@@ -261,6 +293,234 @@ assert (v4 -id/2)*phi_FCl - (v4-id/2) eq
 
 // We have found all the remaining axes
 assert #(o2 join o3 join o3_pair join o4 join o4_pair) eq 50;
+
+// ---------------------------------------------
+//
+// al = 1/2
+
+al := 1/2;
+bt := (5*al-1)/8;
+
+A, gen, frob := M5A(al);
+F := QQ;
+
+t1 := MiyamotoInvolution(A.1);
+t2 := MiyamotoInvolution(A.2);
+
+phi := Matrix(F,[[ 1,0,0,0,0,0],
+               [ 0,0,1,0,0,0],
+               [ 0,0,0,0,1,0],
+               [ 0,1,0,0,0,0],
+               [ 0,0,0,1,0,0],
+               [ 0,0,0,0,0,-1]]);
+
+
+// phi is an automorphism
+assert forall{ <i,j> : i,j in [1..6] | (A.i*phi)*(A.j*phi) eq (A.i*A.j)*phi};
+Miy := sub<GL(6,F) | t1,t2>;
+G := sub<GL(6,F) | t1,t2,phi>;
+
+// Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
+assert Order(Miy) eq 10;
+assert Order(G) eq 20;
+
+I := IdempotentIdeal(A);
+prim := RadicalDecomposition(I);
+
+FCl := AlgebraicClosure(F);
+
+// No rt3
+f := (al^3-6*al^2+1);
+rt1 := Sqrt(FCl!(5*(1-5*al)/(3*al-7)));
+rt2 := Sqrt(FCl!5/al);
+rt4 := Sqrt(FCl!(1-5*al)/(al^3-6*al^2+1));
+
+ACl := ChangeRing(A, FCl);
+frobCl := ChangeRing(frob, FCl);
+
+vars := [ Variety(J, FCl) : J in prim];
+idems := &cat[ [ ACl![ t[i] : i in [1..6]] : t in var] : var in vars];
+
+// We have all the idempotents above except for id/2 \pm v3 which isn't defined as it needs rt3
+assert #idems eq 44;
+
+Simplify(FCl:Partial:=true);
+Prune(FCl);
+
+G_FCl := ChangeRing(G, FCl);
+orbs := {@ {@ ACl!u : u in Orbit(G_FCl, Vector(v))@} : v in idems @};
+Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
+
+assert #orbs eq 8;
+assert {*#o : o in orbs *} eq {* 1^^2, 2, 5^^2, 10^^3 *};
+
+// zero and the identity are the two idempotents in an orbit of size one.
+so, id := HasOne(ACl);
+assert so;
+assert id eq 8/(5*(3*al+1))*ACl![1,1,1,1,1,0];
+
+v1 := id/2 + 1/10/(al-bt)*rt1*ACl.6;
+assert v1 in orbs[3];
+assert id - v1 in orbs[3];
+
+// One of the orbits of size 10
+v2 := id/2 + 1/5/al*rt1*( ACl.2+ACl.5 - (ACl.3+ACl.4) + (al-1)/8/(bt-al)*ACl.6);
+
+assert exists(o2){ o : o in orbs | v2 in o};
+assert id -v2 in o2;
+
+// Two more orbits of size 10
+v3 := id/2 + ACl.1/2
+           + rt2/10*( ACl.2+ACl.5 - (ACl.3+ACl.4) + bt/(bt-al)*ACl.6);
+
+assert exists(o3){ o : o in orbs | v3 in o};
+assert id -v3 notin o3;
+assert exists(o3_pair){ o : o in orbs | id-v3 in o};
+
+// --------------------------------
+//
+// al = 7/3
+
+al := 7/3;
+bt := (5*al-1)/8;
+
+A, gen, frob := M5A(al);
+F := QQ;
+
+I := IdempotentIdeal(A);
+prim := RadicalDecomposition(I);
+
+FCl := AlgebraicClosure(F);
+// Need to add roots
+
+f := (al^3-6*al^2+1);
+rt2 := Sqrt(FCl!5/al);
+rt3 := Sqrt(FCl!(2*al-1));
+rt4 := Sqrt(FCl!(1-5*al)/(al^3-6*al^2+1));
+
+ACl := ChangeRing(A, FCl);
+frobCl := ChangeRing(frob, FCl);
+
+vars := [ Variety(J, FCl) : J in prim];
+idems := &cat[ [ ACl![ t[i] : i in [1..6]] : t in var] : var in vars];
+
+Simplify(FCl:Partial:=true);
+Prune(FCl);
+
+G_FCl := ChangeRing(G, FCl);
+orbs := {@ {@ ACl!u : u in Orbit(G_FCl, Vector(v))@} : v in idems @};
+Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
+
+assert #orbs eq 8;
+assert {*#o : o in orbs *} eq {* 1^^2, 5^^2, 10^^4 *};
+
+// zero and the identity are the two idempotents in an orbit of size one.
+so, id := HasOne(ACl);
+assert so;
+assert id eq 8/(5*(3*al+1))*ACl![1,1,1,1,1,0];
+
+
+// Two more orbits of size 10
+v3 := id/2 + ACl.1/2
+           + rt2/10*( ACl.2+ACl.5 - (ACl.3+ACl.4) + bt/(bt-al)*ACl.6);
+
+assert exists(o3){ o : o in orbs | v3 in o};
+assert id -v3 notin o3;
+assert exists(o3_pair){ o : o in orbs | id-v3 in o};
+
+v4 := id/2
+         + rt4/5* ( 1/16*(7*al+5)/(bt-al)*ACl.1  - al/2/(bt-al)*(ACl.2+ACl.3+ACl.4+ACl.5)
+                          + 1/2*rt2*rt3*( ACl.2 + ACl.5 - (ACl.3+ACl.4) + ACl.6));
+         
+assert exists(o4){ o : o in orbs | v4 in o};
+assert id -v4 notin o4;
+assert exists(o4_pair){ o : o in orbs | id-v4 in o};
+
+assert #{ o3, o3_pair, o4, o4_pair} eq 4;
+// --------------------------------
+//
+// al = root of f
+
+P<t> := PolynomialRing(QQ);
+f := t^3-6*t^2+1;
+
+A1, gen1, frob1 := M5A();
+F<al> := BaseRing(A1);
+
+FCl := AlgebraicClosure(F);
+roots := Roots(f, FCl);
+
+for r in roots do
+  al := r[1];
+  bt := (5*al-1)/8;
+  
+  phi := hom<F-> FCl | [al]>;
+  
+  A := ChangeRing(A1, FCl, phi);
+  frob := ChangeRing(frob1, FCl, phi);
+  
+  // the rt4 from above isn't defined, but we need the others
+  // Need to add roots
+
+  rt1 := Sqrt(FCl!(5*(1-5*al)/(3*al-7)));
+  rt2 := Sqrt(FCl!5/al);
+  rt3 := Sqrt(FCl!(2*al-1));
+
+  Simplify(FCl:Partial:=true);
+  Prune(FCl);
+
+  I := IdempotentIdeal(A);
+  prim := RadicalDecomposition(I);
+  
+  ACl := ChangeRing(A, FCl);
+  frobCl := ChangeRing(frob, FCl);
+
+  vars := [ Variety(J, FCl) : J in prim];
+  idems := &cat[ [ ACl![ t[i] : i in [1..6]] : t in var] : var in vars];
+
+  G_FCl := ChangeRing(G, FCl);
+  orbs := {@ {@ ACl!u : u in Orbit(G_FCl, Vector(v))@} : v in idems @};
+  Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
+
+  assert #orbs eq 8;
+  assert {*#o : o in orbs *} eq {* 1^^2, 2, 5^^2, 10^^3 *};
+
+  // zero and the identity are the two idempotents in an orbit of size one.
+  so, id := HasOne(ACl);
+  assert so;
+  assert id eq 8/(5*(3*al+1))*ACl![1,1,1,1,1,0];
+
+  v1 := id/2 + 1/10/(al-bt)*rt1*ACl.6;
+  assert v1 in orbs[3];
+  assert id - v1 in orbs[3];
+
+  // One of the orbits of size 10
+  v2 := id/2 + 1/5/al*rt1*( ACl.2+ACl.5 - (ACl.3+ACl.4) + (al-1)/8/(bt-al)*ACl.6);
+
+  assert exists(o2){ o : o in orbs | v2 in o};
+  assert id -v2 in o2;
+
+  // Two more orbits of size 10
+  v3 := id/2 + ACl.1/2
+             + rt2/10*( ACl.2+ACl.5 - (ACl.3+ACl.4) + bt/(bt-al)*ACl.6);
+
+  assert exists(o3){ o : o in orbs | v3 in o};
+  assert id -v3 notin o3;
+  assert exists(o3_pair){ o : o in orbs | id-v3 in o};
+
+  assert #{o2, o3, o3_pair} eq 3;
+end for;
+
+
+
+
+
+
+
+
+
+
+
 
 
 //////////////////////////////////////////////////////

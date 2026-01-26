@@ -16,11 +16,11 @@ function IdempotentIdeal(A)
   return I;
 end function;
 
-function IdealOfSingularPoints(A)
+function IdealOfSingularPoints(A: field := QQ)
   F := BaseRing(A);
   P := PolynomialRing(F, Dimension(A));
-  PP := PolynomialRing(Rationals(), Dimension(A)+ Rank(F));
-  PF := PolynomialRing(Rationals(), Rank(F));
+  PP := PolynomialRing(field, Dimension(A)+ Rank(F));
+  PF := PolynomialRing(field, Rank(F));
 
   phiF := hom<F->PF | [PF.i : i in [1..Rank(F)]]>;
   phiP := hom<P->PP | [ PP.i : i in [1..Dimension(A)]]>;
@@ -162,6 +162,7 @@ FindMatchingIdempotents := function(x, orbs)
     
     if p eq 0 then
       // we have found another class of axis!
+      Append(~fail, <L[i], py, 0>);
       print "  Found new orbit of Monster axis.";
     end if;
     

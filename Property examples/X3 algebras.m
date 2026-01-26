@@ -405,7 +405,7 @@ assert coord[3] eq -(2*al-1)*(2*bt-1);
 
 assert IsIdempotent(id-y);
 
-// Check to see whether there are any idempotents (for any value of al or bt) which have the same char  poly as an axis.
+// Check to see whether there are any idempotents (for any value of al or bt) which have the same char poly as an axis.
 
 poss := FindMatchingIdempotents(A.1, orbs);
 
@@ -499,8 +499,6 @@ We have three exceptional situations to check:
  3*al-bt-1 = 0
  2*al*bt-al-bt-1 = 0
  3*al^2 + 3*al*bt - bt - 1 = 0
-
-
 
 */
 

@@ -297,6 +297,72 @@ assert J1 eq ideal<P | t1+t2-1, t2^2-t2+t4/2, t3 + t4/2>;
 // NB in the forbidden paper, there is an extra (2al-1) which is wrong!
 // These are all axes
 
+// ----------------------------------------------
+//
+// Check automorphism group when mu = 1
+
+F<al>:=FunctionField(Rationals());
+A, gens, frob := IY3(al,1);
+
+bas := [A.1+A.2, A.1-A.2, A.3,A.4];
+A := ChangeBasis(A, bas);
+
+P := PolynomialRing(F, 8);
+AP := ChangeRing(A, P);
+g := Matrix([[1, P.1, P.2, P.3],
+             [0, P.4, P.5, P.6],
+             [0,   0, P.7, 0  ],
+             [0,   0,   0, P.8]]);
+
+assert (AP.1*AP.3)*g eq (AP.1*g)*(AP.3*g);
+
+assert AP.2^2*g eq -(2*al-1)*P.7*AP.3 - 2*P.8*AP.4;
+assert (AP.2*g)*(AP.2*g) eq P.4^2*(-(2*al-1)*AP.3-2*AP.4);
+
+assert (AP.1*AP.2)*g eq P.4*AP.2 + P.5*AP.3 + P.6*AP.4;
+assert (AP.1*g)*(AP.2*g) eq P.4*AP.2 + (2*al*P.5 -(2*al-1)*P.1*P.4)*AP.3 -2*P.1*P.4*AP.4;
+
+assert AP.1^2*g eq 2*AP.1 + 2*P.1*AP.2 + (2*P.2 + (2*al-1)*P.7)*AP.3 + 2*(P.3 + P.8)*AP.4;
+assert (AP.1*g)*(AP.1*g) eq 2*AP.1 + 2*P.1*AP.2 + ( (2*al-1)*(1-P.1^2) + 4*al*P.2)*AP.3 + 2*(1-P.1^2)*AP.4;
+
+// So we get
+assert AP.2^2*g - (AP.2*g)*(AP.2*g) eq (2*al-1)*(P.4^2-P.7)*AP.3 +2*(P.4^2-P.8)*AP.4;
+assert (AP.1*AP.2)*g - (AP.1*g)*(AP.2*g) eq (2*al-1)*(P.1*P.4 - P.5)*AP.3 + (P.6 + 2*P.1*P.4)*AP.4;
+assert AP.1^2*g - (AP.1*g)*(AP.1*g) eq (2*al-1)*( (P.1^2 - 1) - 2*P.2 + P.7)*AP.3 + 2*(P.3 + P.8 + P.1^2 - 1)*AP.4;
+
+I := ideal<P |P.4^2-P.7, P.4^2-P.8, P.1*P.4 - P.5, P.6 + 2*P.1*P.4, (P.1^2 - 1) - 2*P.2 + P.7, P.3 + P.8 + P.1^2 - 1>;
+
+// define everything in terms of P.1 and P.4
+assert P.2 -1/2*(P.1^2+P.4^2-1) in I;
+assert P.3 + (P.1^2+P.4^2-1) in I;
+assert P.5 -P.1*P.4 in I;
+assert P.6 +2*P.1*P.4 in I;
+assert P.7-P.4^2 in I;
+assert P.8 - P.4^2 in I;
+
+P<gm1, dl1, gm2, dl2> := PolynomialRing(F,4);
+
+AP := ChangeRing(A, P);
+
+function aut(gm, dl)
+  return Matrix([[1, gm, 1/2*(gm^2+dl^2-1), -(gm^2+dl^2-1)],
+             [0, dl, gm*dl, -2*gm*dl],
+             [0,   0, dl^2, 0  ],
+             [0,   0,   0, dl^2]]);
+end function;
+
+g := aut(gm1, dl1);
+h := aut(gm2, dl2);
+
+assert g*h eq aut(gm1*dl2+gm2, dl1*dl2);
+
+assert forall{<i,j> : i,j in [1..4] | (AP.i*g)*(AP.j*g) eq (AP.i*AP.j)*g};
+// so g is an automorphism
+
+
+
+
+
 // =========================================================
 //
 // IY5
@@ -478,16 +544,17 @@ assert ideal<A|u1+z> eq R;
 // either lm = 4, so that a_i(u2+4z) gives mu(u2+4z) + some amount of u3 and u4
 // or lm = -4/(2al-1), so that a_i(u2+lmz) eq 0 + some amount of u3 and u4
 // otherwise I = <u2,z> = <u2> = I2 which is 4-dim
-x := u2 + 4*z;
-Ix := ideal<A | x>;
-assert Dimension(Ix) eq 3;
-assert x in Ix and u3 in Ix and u4 in Ix;
+zp := 1/4/al*(u2+4*z);
+Izp := ideal<A | zp>;
+assert Dimension(Izp) eq 3;
+assert zp in Izp and u3 in Izp and u4 in Izp; 
 
-y := u2 - 2/(al-1/2)*z;
-assert A.2*y eq 0;
-Iy := ideal<A | y>;
-assert Dimension(Iy) eq 3;
-assert y in Iy and u3 in Iy and u4 in Iy;
+
+np := -1/8/al*((2*al-1)*u2 - 4*z);
+assert A.2*np eq 0;
+Inp := ideal<A | np>;
+assert Dimension(Inp) eq 3;
+assert np in Inp and u3 in Inp and u4 in Inp;
 
 // for lm z + u3
 assert (A.2-A.3)*u3 eq 1/2*u4;
@@ -523,56 +590,62 @@ B3, quo3 := quo<A|I3>;
 assert not HasOne(B3);
 assert Dimension(Annihilator(B3)) eq 1;
 
-// This is a new algebra!!
+assert np@quo3 in Annihilator(B3);
+
+assert Vector(zp@quo3) in Eigenspace(B3.1, al);
+
 assert A.1@quo3 eq B3.1 and A.2@quo3 eq B3.2;
 assert sub<B3 | B3.1, B3.2> eq B3;
+
+assert A.1*A.2 eq 1/2*(A.1+A.2) + (al-1/2)*zp + np;
+assert zp^2 eq (al-1)/8/al*u4;
+
+// So this is IY_3(al, 1/2, 1)
+
 // The fusion law is Monster type, but with gaps.
 // 0*0, 0*al, al*al are all empty
 assert HasMonsterFusionLaw(B3.1:fusion_values:=[al,1/2]);
 assert Dimension(Eigenspace(B3.1, 0)) eq 1;
 assert Dimension(Eigenspace(B3.1, al)) eq 1;
 assert Dimension(Eigenspace(B3.1, 1/2)) eq 1;
-// It is 4-dim and has al in eigenspace
+// It is 4-dim and has a common 0- and a common al- eigenspace
 
-assert y@quo3 in Annihilator(B3);
-assert Vector(x@quo3) in Eigenspace(B3.1, al);
 // Looking at the fusion law, either of these gives a 1-dim ideal, which matches above analysis.
 
 // ---------------------------------------------------
-Bx, quox := quo<A|Ix>;
-assert not HasOne(Bx);
-assert Dimension(Annihilator(Bx)) eq 1;
+Bzp, quozp := quo<A | Izp>;
+assert not HasOne(Bzp);
+assert Dimension(Annihilator(Bzp)) eq 1;
 
-assert A.1@quox eq Bx.1 and A.2@quox eq Bx.2;
-assert sub<Bx | Bx.1, Bx.2> eq Bx;
-assert HasJordanFusionLaw(Bx.1:fusion_value:=1/2);
+assert A.1@quozp eq Bzp.1 and A.2@quozp eq Bzp.2;
+assert sub<Bzp | Bzp.1, Bzp.2> eq Bzp;
+assert HasJordanFusionLaw(Bzp.1:fusion_value:=1/2);
 
-zz := -(2*al-1)/8/al*y@quox;
-assert zz in Annihilator(Bx);
+assert np@quozp in Annihilator(Bzp);
 
-assert Bx.1*Bx.2 eq 1/2*(Bx.1 + Bx.2) + zz;
+assert Bzp.1*Bzp.2 eq 1/2*(Bzp.1 + Bzp.2) + np@quozp;
 // So this is \widehat{S}(2)^\circ
 
 // ---------------------------------------------------
-By, quoy := quo<A | Iy>;
-assert not HasOne(By);
-assert Dimension(Annihilator(By)) eq 0;
+Bnp, quonp := quo<A | Inp>;
+assert not HasOne(Bnp);
+assert Dimension(Annihilator(Bnp)) eq 0;
 
-assert A.1@quoy eq By.1 and A.2@quoy eq By.2;
-assert sub<By | By.1, By.2> eq By;
-assert HasMonsterFusionLaw(By.1:fusion_values:=[al,1/2]);
-assert Dimension(Eigenspace(By.1, 0)) eq 0;
-assert Dimension(Eigenspace(By.1, al)) eq 1;
-assert Dimension(Eigenspace(By.1, 1/2)) eq 1;
+assert A.1@quonp eq Bnp.1 and A.2@quonp eq Bnp.2;
+assert sub<Bnp | Bnp.1, Bnp.2> eq Bnp;
+assert HasMonsterFusionLaw(Bnp.1:fusion_values:=[al,1/2]);
+assert Dimension(Eigenspace(Bnp.1, 0)) eq 0;
+assert Dimension(Eigenspace(Bnp.1, al)) eq 1;
+assert Dimension(Eigenspace(Bnp.1, 1/2)) eq 1;
 // Fusion law has gaps with al*al and al*1/2 empty
 
-u := (x/2/al)@quoy;
+u := zp@quonp;
 // u is the common al eigenspace
-assert forall{ i : i in [1..3] | By.i*u eq al*u};
+assert forall{ i : i in [1..3] | Bnp.i*u eq al*u};
 // This is a 1-dim ideal, which fits the above picture
 
-w := By.1*By.2;
-assert w*w eq (1/4-al)*(By.1+By.2) + (2*al+1/2)*w;
+w := Bnp.1*Bnp.2;
+assert w*w eq (1/4-al)*(Bnp.1+Bnp.2) + (2*al+1/2)*w;
 // This is Maddy Whybrow's example in fusion law (a), when bt = 1/2 and x=1 in
 // Graded 2-generated axial algebras, https://arxiv.org/abs/2005.03577
 // Also type (d)
@@ -585,92 +658,71 @@ assert A.1@quo2 eq B2.1 and A.2@quo2 eq B2.2;
 assert B2.1*B2.2 eq 1/2*(B2.1+B2.2);
 // so the quotient is S(2)^\circ
 
-// ---------------------------------
-//
-// We need some additional identities for the idempotents section
-
-zp := -(2*al-1)/8/al*y;
-
-u2p := (u2+4*z);
-assert u2p^2 eq 2*al*(al-1)*u4;
-assert u2p*u3 eq 0;
-
-assert A.1*A.2 eq 1/2*(A.1+A.2) + zp + (2*al-1)/8/al*u2p;
-
-assert A.1*zp eq (2*al-1)/16/al*(u3 +3/2*u4);
-assert A.2*zp eq 0;
-assert zp^2 eq -(2*al-1)/32/al*u4;
-
-assert A.1*u2p eq al*u2p + (2*al-1)/2*u3 + (4*al-3)/4*u4;
-assert A.2*u2p eq al*u2p;
-assert zp*u2p eq 0;
-
-assert A.1*u3 eq 1/2*u3+3/4*u4;
-assert A.2*u3 eq 1/2*u3+1/4*u4;
-assert zp*u3 eq 0;
-
-
-K<lm, mu2, mu3, m4> := PolynomialRing(F, 4);
-
-AK := ChangeRing(A, K);
-Y := lm*AK.1 + (1-lm)*AK.2 + 2*lm*(1-lm)*AK!Eltseq(zp);
-
-X := Y + mu2*AK!Eltseq(u2p) + mu3*AK!Eltseq(u3) + mu4*AK!Eltseq(u4);
-
-// can use this to check the polys are correct
-// Slight error in next line, but it works out as seen below
-//assert X^2 eq Y+ (-(2*al - 1)*lm*(lm-1)/4/al + 2*al*mu2)*AK!Eltseq(u2p) + mu3*AK!Eltseq(u3)+ 1/2*(-(2*al - 1)/(4*al)*(lm^2 + lm + -2)*lm^2 + (4*al - 3)*lm*mu2 + 4*al*(al - 1)*mu2^2 + (2*lm + 1)*mu3)*AK!Eltseq(u4);
-
-
 // --------------------------------------------------------
 //
 // idempotents
 //
 // --------------------------------------------------------
-A, gens, frob := IY5();
-F<al> := BaseRing(A);
-I := IdempotentIdeal(A);
-P := Generic(I);
 
-prim := PrimaryDecomposition(I);
+// We compute some identities which support a theoretical proof.
 
-assert #prim eq 2;
-assert exists(J0){ J : J in prim | Dimension(J) eq 0};
+assert A.1*A.2 eq 1/2*(A.1+A.2) + (al-1/2)*zp + np;
 
-assert exists(J2){ J : J in prim | Dimension(J) eq 2};
+assert A.1*zp eq al*zp + (2*al-1)/8/al*u3 + (4*al-3)/16/al*u4;
+assert A.2*zp eq al*zp;
+assert zp*zp eq (al-1)/8/al*u4;
 
-// In the ideal of dim 0, there is only 0
-assert VarietySizeOverAlgebraicClosure(J0) eq 1;
-assert Variety(J0) eq [<0,0,0,0,0,0>];
+assert A.1*np eq (2*al-1)/16/al*(u3 +3/2*u4);
+assert A.2*np eq 0;
+assert np^2 eq -(2*al-1)/32/al*u4;
 
-// For J2, z = 0
-assert P.6 in J2;
-// sum of the axes is 1 in J2
-assert &+[P.i : i in [1..5]] -1 in J2;
+assert A.1*u3 eq 1/2*u3+3/4*u4;
+assert A.2*u3 eq 1/2*u3+1/4*u4;
+assert zp*u3 eq 0;
+assert np*u3 eq 0;
 
-KK<s,t> := PolynomialRing(F,2);
-AA := ChangeRing(A,KK);
-Y := s*AA.1 + (1-s)*AA.2 + 2*s*(1-s)*AA!Eltseq(zp);
-X:= s*(s-1)/4/al*AA!Eltseq(u2p) + t*AA!Eltseq(u3) + (s^2*(1-s^2)/4+(1+2*s)*t)/2*AA!Eltseq(u4) + Y;
+
+K<lm, mu3, mu4> := PolynomialRing(F, 3);
+
+AK := ChangeRing(A, K);
+Y := lm*AK.1 + (1-lm)*AK.2 - lm*(1-lm)*AK!Eltseq(zp) + 2*lm*(1-lm)*AK!Eltseq(np);
+
+X := Y + mu3*AK!Eltseq(u3) + mu4*AK!Eltseq(u4);
+
+// can use this to check the polys are correct
+// Slight error in next line, but it works out as seen below
+//assert X^2 eq Y+ (-(2*al - 1)*lm*(lm-1)/4/al + 2*al*mu2)*AK!Eltseq(u2p) + mu3*AK!Eltseq(u3)+ 1/2*(-(2*al - 1)/(4*al)*(lm^2 + lm + -2)*lm^2 + (4*al - 3)*lm*mu2 + 4*al*(al - 1)*mu2^2 + (2*lm + 1)*mu3)*AK!Eltseq(u4);
+
+assert X^2 eq Y + mu3*AK!Eltseq(u3)+ 1/2*( lm^2*(1-lm^2)/4 + (1+2*lm)*mu3 )*AK!Eltseq(u4);
+
+// This allows us to solve for mu3 and mu4
+
+
+// Check fusion law
+
+KK<lm, mu3> := PolynomialRing(F, 2);
+
+AA := ChangeRing(A, KK);
+Y := lm*AA.1 + (1-lm)*AA.2 - lm*(1-lm)*AA!Eltseq(zp) + 2*lm*(1-lm)*AA!Eltseq(np);
+
+mu4 :=  1/2*( lm^2*(1-lm^2)/4 + (1+2*lm)*mu3 );
+
+X := Y + mu3*AA!Eltseq(u3) + mu4*AA!Eltseq(u4);
 
 assert IsIdempotent(X);
 
 assert CharacteristicPolynomial(AdjointMatrix(X)) eq CharacteristicPolynomial(AdjointMatrix(AA.1));
-assert IsIndependent([A.1,A.2,zp,u2p,u3,u4]);
+assert IsIndependent([A.1,A.2,zp,np,u3,u4]);
 // Group must be block triangular wrt 
 
-AA := ChangeRing(AA, FieldOfFractions(KK));
-X := AA!Eltseq(ChangeRing(X, FieldOfFractions(KK)));
-assert InnerProduct(Vector(X)*ChangeRing(frob, FieldOfFractions(KK)), Vector(X)) eq 1;
-
-X01 := (s+2)*AA.1 -2*(3*s+4)*AA.3 + 8*(s+1)*AA.4 -(3*s+2)*AA.5 -16/(2*al-1)*AA.6;
-X02 := (s+2)*AA.2 -(3*s+5)*AA.3 + (3*s+4)*AA.4 -(s+1)*AA.5 -4/(2*al-1)*AA.6;
-Xal := (s+1)*(s+2)*AA.1 -2*(s+2)*(2*s+1)*AA.2 + 2*(3*s^2+6*s+1)*AA.3 -2*s*(2*s+3)*AA.4
-            +s*(s+1)*AA.5 + 8*AA.6;
-Xbt1 := (2*s^3 + 8*s^2 + 15*s - 4*t + 10)*AA.1 -2*(6*s^3 + 16*s^2 + 15*s - 12*t + 5)*AA.3
-          +16*(s^3 + 2*s^2 + s - 2*t)*AA.4 - (6*s^3 + 8*s^2 + s - 12*t)*AA.5;
-Xbt2 := (2*s^3 + 8*s^2 + 15*s - 4*t + 10)*AA.2 -(6*s^3 + 20*s^2 + 29*s - 12*t + 15)*AA.3
-          + (6*s^3 + 16*s^2 + 17*s - 12*t + 6)*AA.4 -(2*s^3 + 4*s^2 + 3*s - 4*t + 1)*AA.5;
+X01 := (lm+2)*AA.1 -2*(3*lm+4)*AA.3 + 8*(lm+1)*AA.4 -(3*lm+2)*AA.5 -16/(2*al-1)*AA.6;
+X02 := (lm+2)*AA.2 -(3*lm+5)*AA.3 + (3*lm+4)*AA.4 -(lm+1)*AA.5 -4/(2*al-1)*AA.6;
+Xal := (lm+1)*(lm+2)*AA.1 -2*(lm+2)*(2*lm+1)*AA.2 + 2*(3*lm^2+6*lm+1)*AA.3 -2*lm*(2*lm+3)*AA.4
+            +lm*(lm+1)*AA.5 + 8*AA.6;
+Xbt1 := (2*lm^3 + 8*lm^2 + 15*lm - 4*mu3 + 10)*AA.1 -2*(6*lm^3 + 16*lm^2 + 15*lm - 12*mu3 + 5)*AA.3
+          +16*(lm^3 + 2*lm^2 + lm - 2*mu3)*AA.4 - (6*lm^3 + 8*lm^2 + lm - 12*mu3)*AA.5;
+Xbt2 := (2*lm^3 + 8*lm^2 + 15*lm - 4*mu3 + 10)*AA.2 -(6*lm^3 + 20*lm^2 + 29*lm - 12*mu3 + 15)*AA.3
+          + (6*lm^3 + 16*lm^2 + 17*lm - 12*mu3 + 6)*AA.4 -(2*lm^3 + 4*lm^2 + 3*lm - 4*mu3 + 1)*AA.5;
 
 assert X*X01 eq 0;
 assert X*X02 eq 0;
@@ -679,11 +731,40 @@ assert X*Xbt1 eq 1/2*Xbt1;
 assert X*Xbt2 eq 1/2*Xbt2;
 
 
-assert X eq   1/8*(-s*(s^3-5*s-4) + 4*(2*s+3)*t)*AA.1
-            + 1/2*(s^2*(s^2-3) -2*(4*s+5)*t + 2)*AA.2
-            + 1/4*(-s*(3*s^3-5*s +2) +24*(s+1)*t)*AA.3
-            + 1/2*(-s^2*(1-s^2) - 2*(4*s+3)*t)*AA.4
-            + 1/8*(s^2*(1-s^2) + 4*(2*s+1)*t)*AA.5;
+assert X eq   1/8*(-lm*(lm^3-5*lm-4) + 4*(2*lm+3)*mu3)*AA.1
+            + 1/2*(lm^2*(lm^2-3) -2*(4*lm+5)*mu3 + 2)*AA.2
+            + 1/4*(-lm*(3*lm^3-5*lm +2) +24*(lm+1)*mu3)*AA.3
+            + 1/2*(-lm^2*(1-lm^2) - 2*(4*lm+3)*mu3)*AA.4
+            + 1/8*(lm^2*(1-lm^2) + 4*(2*lm+1)*mu3)*AA.5;
+
+// These all have Monster type
+AAA := ChangeRing(AA, FunctionField(KK));
+assert HasMonsterFusionLaw(AAA!Eltseq(X) : fusion_values:=[KK!al, 1/2]);
+
+evals, espace, FL := IdentifyFusionLaw(AAA!Eltseq(X));
+Gr, gr := Grading(FL);
+assert Order(Gr) eq 2;
+
+// Check the inner products
+
+KK<lm1, mu1, lm2, mu2> := PolynomialRing(F, 4);
+
+AA := ChangeRing(A, KK);
+Y1 := lm1*AA.1 + (1-lm1)*AA.2 - lm1*(1-lm1)*AA!Eltseq(zp) + 2*lm1*(1-lm1)*AA!Eltseq(np);
+X1 := Y1 + mu1*AA!Eltseq(u3) + 1/2*( lm1^2*(1-lm1^2)/4 + (1+2*lm1)*mu1)*AA!Eltseq(u4);
+
+Y2 := lm2*AA.1 + (1-lm2)*AA.2 - lm2*(1-lm2)*AA!Eltseq(zp) + 2*lm2*(1-lm2)*AA!Eltseq(np);
+X2 := Y2 + mu2*AA!Eltseq(u3) + 1/2*( lm2^2*(1-lm2^2)/4 + (1+2*lm2)*mu2)*AA!Eltseq(u4);
+
+assert IsIdempotent(X1);
+assert IsIdempotent(X2);
+
+// Inner product between any two 
+assert InnerProduct(X1*ChangeRing(frob, KK), X1) eq 1;
+assert InnerProduct(X1*ChangeRing(frob, KK), X2) eq 1;
+
+
+
 
 // We know the form of the axis a_n.
 // When does X equal a_n?
@@ -767,26 +848,212 @@ assert d25_45 - d35_45 eq -n-s+1;
 
 // so n = s+1, t = 1/6*s*(s^2-1) is the solution
 
-// --------------------------------
+// ---------------------------------------------------
 //
-// Check for singular points
-II := IdealOfSingularPoints(A);
-P2 := Generic(II);
+// Computations for the automorphism group
 
-primII := RadicalDecomposition(II);
-assert #primII eq 2;
+A, gens, frob := IY5();
+F<al> := BaseRing(A);
 
-// Can't have al = 1/2
-good := [ J : J in primII | P2.7-1/2 notin J ];
-assert #good eq 1;
+// We change basis
+u1 := A![1,-1,0,0,0,0];
+u2 := A![1,-2,1,0,0,0];
+u3 := A![1,-3,3,-1,0,0];
+u4 := A![1,-4,6,-4,1,0];
+z := A.6;
 
-Jsing := good[1];
-// P.7 ie al does not feature in Jsing
-assert forall{ f : f in Basis(Jsing) | Evaluate(f,7,0) eq f};
+zp := 1/4/al*(u2+4*z);
+np := -1/8/al*( (2*al-1)*u2 -4*z);
+zzp := zp + 1/8/al*( u3 + (4*al-1)/4/al*u4);
+nnp := np - (2*al-1)/16/al*( u3 + (4*al-1)/4/al*u4);
 
-// So define a map back to P
-phi := hom<P2->P | [P.i : i in [1..6]] cat [0]>;
+// bas := [ A.1+A.2, u1, zp+ 1/8/al*u3 + (4*al-1)/32/al^2*u4, np -(2*al-1)/2*(1/8/al*u3 + (4*al-1)/32/al^2*u4), u3, u4];
+zzp := zp+ 1/8/al*u3 + (4*al-1)/32/al^2*u4;
+nnp := np -(2*al-1)/2*(1/8/al*u3 + (4*al-1)/32/al^2*u4);
 
-assert Basis(Jsing)@phi eq Basis(J2);
-// So the ideal is the same as for J2
+assert (A.1+A.2)^2 eq 2*(A.1+A.2) + (2*al-1)*zzp + 2*nnp;
+assert (A.1+A.2)*u1 eq u1;
+assert (A.1+A.2)*zzp eq 2*al*zzp;
+assert (A.1+A.2)*nnp eq (2*al-1)/32/al*u4;
+assert (A.1+A.2)*u3 eq u3+u4;
+
+assert u1^2 eq -(2*al-1)*zzp - 2*nnp;
+assert u1*zzp eq (2*al-1)/8/al*(u3+u4);
+assert u1*nnp eq (2*al-1)/8/al*(u3+u4);
+assert u1*u3 eq 1/2*u4;
+
+assert zzp^2 eq (al-1)/8/al*u4;
+assert zzp*nnp eq 0;
+assert zzp*u3 eq 0;
+
+assert nnp^2 eq -(2*al-1)/32/al*u4;
+assert nnp*u3 eq 0;
+
+bas := [ A.1+A.2, u1, zp+ 1/8/al*u3 + (4*al-1)/32/al^2*u4, np -(2*al-1)/2*(1/8/al*u3 + (4*al-1)/32/al^2*u4), u3, u4];
+AA := ChangeBasis(A, bas);
+
+P<gm, dl> := PolynomialRing(F, 13);
+
+g := VerticalJoin(
+       HorizontalJoin( Matrix([[1, gm, 1/2*(gm^2+dl^2-1), -(gm^2+dl^2-1)],
+             [0, dl, gm*dl, -2*gm*dl],
+             [0,   0, dl^2, 0  ],
+             [0,   0,   0, dl^2]]),
+             Matrix(4,2,[P.i : i in [3..10]])),
+       Matrix([[0,0,0,0,P.11, P.12],[0,0,0,0,0,P.13]]));
+             
+AA := ChangeRing(AA, P);
+
+autrelation := function(x,y)
+  return {@ P | v : v in Eltseq(AA!(Vector((x*y))*g) - (x*g)*(y*g)) | v ne 0@};
+end function;
+
+relations := &join { autrelation(AA.i, AA.j) : j in [1..i], i in [1..6]};
+ 
+assert (AA.1*AA.5)*g - (AA.1*g)*(AA.5*g) eq (-(1+gm/2)*P.11 +P.12 + P.13)*AA.6;
+assert (AA.2*AA.5)*g - (AA.2*g)*(AA.5*g) eq 1/2*(-dl*P.11 + P.13)*AA.6;
+
+I;
+assert (AA.1*AA.4)*g - (AA.1*g)*(AA.4*g) eq ((-2*al + 1)/(16*al)*gm*dl^2 - P.9)*AA.5 + 
+           + ( -(1+ 1/2*gm)*P.9 + (2*al-1)/32/al*( P.13 - dl^2*( gm*(gm +2) + dl^2)))*AA.6;
+
+assert (AA.2*AA.4)*g - (AA.2*g)*(AA.4*g) eq (2*al-1)/16/al*(P.11-dl^3)*AA.5 + 
+           (-1/2*dl*P.9 + (2*al - 1)/(16*al)*(P.12+P.13 - dl^3*(gm+1)))*AA.6;
+assert (AA.3*AA.4)*g - (AA.3*g)*(AA.4*g) eq 0;
+assert (AA.4^2)*g - (AA.4*g)*(AA.4*g) eq (2*al - 1)/(32*al)*(dl^4 - P.13)*AA.6;
+
+
+autg := function(gm,dl,et, th)
+  g26 := dl/2*et + (gm/2+1)*th -(al-1)/16/al*gm*dl -gm*dl/16*(gm^2+dl^2);
+  g46 := dl^2/64/al^2*((1-dl^2)*(2*al-1)*(al-1) + al*gm*(2*al*(gm-4) + gm+4))-dl/2*th;
+  g16 := -g46 -(2*al-1)*dl^2/64/al^2*((1-dl^2)*(1-al) + (gm+4)*al*gm) + (gm/2+1)*et + (3*al-2)/64/al -(al-1)/32/al*(gm^2+dl^2) -1/64*(gm^2+dl^2)^2;
+  
+  return Matrix([[1, gm, 1/2*(gm^2+dl^2-1), -(gm^2+dl^2-1), et, g16 ],
+             [0, dl, gm*dl, -2*gm*dl, th, g26],
+             [0,   0, dl^2, 0  , gm*dl^2/8/al, dl^2/32/al^2*((1-dl^2)*(1-al) + (gm+4)*al*gm)],
+             [0,   0,   0, dl^2, -(2*al-1)/16/al*gm*dl^2, g46],
+             [0, 0, 0, 0, dl^3, dl^3*(1+gm/2-dl)],
+             [0, 0, 0, 0, 0, dl^4]]);
+end function;
+
+
+
+
+
+bas := [ A.1+A.2, u1, zp, np, u3, u4];
+
+AA := ChangeBasis(A, bas);
+
+P<gm, dl> := PolynomialRing(F, 13);
+
+g := VerticalJoin(
+       HorizontalJoin( Matrix([[1, gm, 1/2*(gm^2+dl^2-1), -(gm^2+dl^2-1)],
+             [0, dl, gm*dl, -2*gm*dl],
+             [0,   0, dl^2, 0  ],
+             [0,   0,   0, dl^2]]),
+             Matrix(4,2,[P.i : i in [3..10]])),
+       Matrix([[0,0,0,0,P.11, P.12],[0,0,0,0,0,P.13]]));
+             
+AA := ChangeRing(AA, P);
+
+autrelation := function(x,y)
+  return {@ P | v : v in Eltseq(AA!(Vector((x*y))*g) - (x*g)*(y*g)) | v ne 0@};
+end function;
+
+relations := &join { autrelation(AA.i, AA.j) : j in [1..i], i in [1..6]};
+
+
+(-al + 1)*dl^2*(gm^2 + dl^2)
++ (4*al - 3)*dl^2*(dl^2-gm)
++ (-3*al + 2)*dl^2 
++ (2*al - 1)*dl^3*(2+gm-2*dl) 
+- (gm+2)*dl^2*(1+gm-dl)
++ 32*al^2*P.8 
+
+32*al^2*P.8 
++ dl^2*( (-al + 1)*(gm^2 + dl^2)
++ (4*al - 3)*(dl^2-gm)
++ (-3*al + 2)
++ (2*al - 1)*dl*(2+gm-2*dl) 
+- (gm+2)*(1+gm-dl))
+
+P.8 
++ dl^2/32/al^2*( 
+
+
+(-al + 1)*(gm^2 + dl^2)
++ (4*al - 3)*(dl^2-gm)
++ (-3*al + 2)
++ (2*al - 1)*dl*(2+gm-2*dl) 
+- (gm+2)*(1+gm-dl))
+
+1/32*((gm^2 + dl^2)^2 + 4*gm^2*dl^2 + 4*gm^3 + 2*gm^2 + 12*gm*dl^2  - 4*gm  + 2*dl^2 -3)
+ - dl*P.5 - (gm+2)*P.3 + 2*P.4
+
+
+1/16*dl*(gm^3 + 3*gm^2 + gm*dl^2 + gm  + dl^2 - 1)
+ -1/2*dl*et + P.6- (gm/2+1)*th
+
+  g26 := (gm/2+1)*th + dl/2*et -dl/16*(gm^3 + 3*gm^2 + gm*dl^2 + gm + dl^2 - 1);
+
+1/4*gm*dl^2*(gm/2+1)
+ - dl*th + (-2*al + 1)*dl^2/32/al*(gm-dl+3)*(gm-dl+1) - 2*P.10
+ 
+g46 := -dl/2*th + (1-2*al)*dl^2/64/al*(gm-dl+3)*(gm-dl+1) + 1/8*gm*dl^2*(gm/2+1);
+ 
+autg := function(gm, dl, et, th)
+  g16 := (gm/2+1)*et + dl/2*th -1/64*((gm^2+dl^2)^2 + 4*gm^2*dl^2 + 4*gm^3 + 2*gm^2 + 12*gm*dl^2 -4*gm+2*dl^2-3);
+  g26 := (gm/2+1)*th + dl/2*et -dl/16*(gm^3 +3*gm^2+gm*dl^2+gm+dl^2-1);
+  g46 := -dl/2*th + (1-2*al)*dl^2/64/al*(gm-dl+3)*(gm-dl+1) + 1/8*gm*dl^2*(gm/2+1);
+  
+  return Matrix([[1, gm, 1/2*(gm^2+dl^2-1), -(gm^2+dl^2-1), et, g16 ],
+             [0, dl, gm*dl, -2*gm*dl, th, g26],
+             [0,   0, dl^2, 0  , dl^2/8/al*(1+gm-dl), dl^2/32/al*(gm-dl+3)*(gm-dl+1)],
+             [0,   0,   0, dl^2, (1-2*al)/16/al*dl^2*(1+gm-dl), g46],
+             [0, 0, 0, 0, dl^3, dl^3*(1+gm/2-dl)],
+             [0, 0, 0, 0, 0, dl^4]]);
+end function;
+
+FF<gm1,dl1,et1,th1,gm2,dl2,et2,th2> := FunctionField(F,8);
+
+AFF := ChangeRing(ChangeBasis(A,bas), FF);
+
+assert autg(0,1,et1,th1)*autg(0,1,et2,th2) eq autg(0,1,et1+et2,th1+th2);
+
+g1 := autg(gm1,dl1,et1,th1);
+n := autg(0,1,et2,th2);
+
+// so n spans a normal subgroup
+assert g1^-1*n*g1 eq autg(0,1,dl1^2*(dl1*et2 -gm1*th2), dl1^2*th2);
+
+
+assert AA.1^2 eq 2*AA.1 + (2*al-1)*AA.3 + 2*AA.4;
+assert AA.1*AA.2 eq AA.2;
+assert AA.1*AA.3 eq 2*al*AA.3 + (2*al-1)/8/al*AA.5 + (4*al-3)/16/al*AA.6;
+assert AA.1*AA.4 eq (2*al - 1)*( 1/(16*al)*AA.5 + 3/(32*al)*AA.6);
+assert AA.1*AA.5 eq AA.5+AA.6;
+
+
+assert AA.2*AA.2 eq -(2*al-1)*AA.3 -2*AA.4;
+assert AA.2*AA.3 eq (2*al-1)/8/al*AA.5 + (4*al-3)/16/al*AA.6;
+assert AA.2*AA.4 eq (2*al - 1)*( 1/(16*al)*AA.5 + 3/(32*al)*AA.6);
+
+
+assert (A.1+A.2)^2 eq 2*(A.1+A.2) + (2*al-1)*zp + 2*np;
+assert (A.1+A.2)*u1 eq u1;
+assert (A.1+A.2)*zp eq (16*al - 5)/(16*al)*u4;
+
+
+assert u1^2 eq -(2*al-1)*zp -2*np;
+
+
+
+
+
+
+
+
+
+
+
 

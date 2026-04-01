@@ -151,7 +151,7 @@ assert #prim eq 13;
 poss := [ J : J in prim | P.7-1 notin J and P.7-1/5 notin J];
 assert forall{ J : J in poss | IsPrime(J) };
 
-assert #poss eq 10; // This is a guess based on probable decomp
+assert #poss eq 10;
 
 // For al = 1/2, axes and id-axes are singular
 Jaxes := [ ideal<P | [ P.j : j in [1..5] | j ne i] cat [P.i-1,P.6, P.7-1/2]> : i in [1..5]];
@@ -163,7 +163,7 @@ assert forall{ J : J in Jaxes cat Jaxes_id | J in poss };
 
 I := IdempotentIdeal(A);
 
-// Takes about 120 secs
+// Takes about 13 secs
 prim := PrimaryDecomposition(I);
 
 FCl := AlgebraicClosure(F);
@@ -172,10 +172,10 @@ FCl := AlgebraicClosure(F);
 
 // NB al \neq 0, 1/5
 f := al^3-6*al^2+1;
-rt1 := Sqrt(FCl!(5*(1-5*al)/(3*al-7)));
+rt1 := Sqrt(FCl!(-5*8*bt/(3*al-7)));
 rt2 := Sqrt(FCl!5/al);
 rt3 := Sqrt(FCl!(2*al-1));
-rt4 := Sqrt(FCl!(1-5*al)/(al^3-6*al^2+1));
+rt4 := Sqrt(FCl!-8*bt/(al^3-6*al^2+1));
 
 // So bad points are al = 1/2, 7/3 and roots of f
 ACl := ChangeRing(A, FCl);
@@ -207,14 +207,14 @@ assert id eq 8/(5*(3*al+1))*ACl![1,1,1,1,1,0];
 assert len(id) eq 2^3/(3*al + 1);
 
 
-v1 := id/2 + 1/10/(al-bt)*rt1*ACl.6;
-assert v1 in orbs[3];
-assert id - v1 in orbs[3];
-assert len(v1) eq 2^2/(3*al + 1);
-assert len(v1) eq 1/2/(al-bt);
+v1 := 1/10/(al-bt)*rt1*ACl.6;
+assert id/2 + v1 in orbs[3];
+assert id/2 - v1 in orbs[3];
+assert len(id/2 + v1) eq 2^2/(3*al + 1);
+assert len(id/2 - v1) eq 1/2/(al-bt);
 
 // The fusion law has four eigenvalues and is not graded
-evals, espaces, FL := IdentifyFusionLaw(v1);
+evals, espaces, FL := IdentifyFusionLaw(id/2 + v1);
 GR, gr := Grading(FL);
 assert Order(GR) eq 1;
 assert #evals eq 4;
@@ -223,16 +223,17 @@ assert #evals eq 4;
 assert {@ ACl.i : i in [1..5] @} in orbs;
 assert {@ id - ACl.i : i in [1..5] @} in orbs;
 assert len(id-ACl.1) eq (7-3*al)/(3*al + 1);
+assert len(id-ACl.1) eq (7-3*al)/(al-bt)/8;
 
 // One of the orbits of size 10
-v2 := id/2 + 1/5/al*rt1*( ACl.2+ACl.5 - (ACl.3+ACl.4) + (al-1)/8/(bt-al)*ACl.6);
+v2 := 1/5/al*rt1*( ACl.2+ACl.5 - (ACl.3+ACl.4) + (al-1)/8/(bt-al)*ACl.6);
 
-assert exists(o2){ o : o in orbs | v2 in o};
-assert id -v2 in o2;
-assert len(v2) eq 2^2/(3*al + 1);
-assert len(v2) eq 2^2/(3*al + 1);
+assert exists(o2){ o : o in orbs | id/2 + v2 in o};
+assert id/2 - v2 in o2;
+assert len(id/2 - v2) eq 2^2/(3*al + 1);
+assert len(id/2 + v2) eq 2^2/(3*al + 1);
 
-evals, espaces, FL := IdentifyFusionLaw(v2);
+evals, espaces, FL := IdentifyFusionLaw(id/2 + v2);
 assert #evals eq 6;
 GR, gr := Grading(FL);
 assert Order(GR) eq 2;
@@ -240,59 +241,178 @@ assert MiyamotoInvolution(v2) eq t1;
 
 // id-v2 is equal to the above but with the last big sum as a minus
 phi_FCl := ChangeRing(phi, FCl);
-assert (v2-id/2)*phi_FCl eq -(v2-id/2);
+assert v2*phi_FCl eq -v2;
 // So the extra automorphism is related to a field automorphism exchanging rt1 for -rt1
 
+
 // Two more orbits of size 10
-v3 := id/2 + ACl.1/2
+v3 := ACl.1/2
            + rt2/10*( ACl.2+ACl.5 - (ACl.3+ACl.4) + bt/(bt-al)*ACl.6);
 
-assert exists(o3){ o : o in orbs | v3 in o};
-assert id -v3 notin o3;
-assert len(v3) eq (1 + (al -bt)) /2/(al-bt);
+assert exists(o3){ o : o in orbs | id/2 + v3 in o};
+assert id/2 -v3 notin o3;
+assert len(id/2 + v3) eq (1 + (al -bt)) /2/(al-bt);
 
-evals, espaces, FL := IdentifyFusionLaw(v3);
+evals, espaces, FL := IdentifyFusionLaw(id/2 + v3);
 assert #evals eq 5;
 GR, gr := Grading(FL);
 assert Order(GR) eq 2;
-assert MiyamotoInvolution(v2) eq t1;
+assert MiyamotoInvolution(id/2 + v3) eq t1;
 
-assert exists(o3_pair){ o : o in orbs | id-v3 in o};
-assert len(id-v3) eq (1 - (al -bt)) /2/(al-bt);
+assert exists(o3_pair){ o : o in orbs | id/2-v3 in o};
+assert len(id/2-v3) eq (1 - (al -bt)) /2/(al-bt);
 
 // The extra automorphism is related to a field automorphism exchanging rt2 for -rt2
-assert (v3 -id/2 -ACl.1/2)*phi_FCl eq -(v3 -id/2 -ACl.1/2);
+assert (v3 - ACl.1/2)*phi_FCl eq -(v3 -ACl.1/2);
+
+// One of id/2+v3 and id/2-v3 is primitve and the other is not
+assert {Dimension(Eigenspace(x, 1)) : x in [id/2+v3, id/2-v3]} eq {1,2};
+assert exists(x){ x : x in [id/2+v3, id/2-v3] | Dimension(Eigenspace(x, 1)) eq 1};
+
+// We have
+assert x + x*phi_FCl eq id - ACl.1;
 
 // Final two orbits of size 10
-v4 := id/2
-         + rt4/5* ( 1/16*(7*al+5)/(bt-al)*ACl.1  - al/2/(bt-al)*(ACl.2+ACl.3+ACl.4+ACl.5)
+v4 := rt4/5* ( 1/16*(7*al+5)/(bt-al)*ACl.1  - al/2/(bt-al)*(ACl.2+ACl.3+ACl.4+ACl.5)
                           + 1/2*rt2*rt3*( ACl.2 + ACl.5 - (ACl.3+ACl.4) + ACl.6));
          
-assert exists(o4){ o : o in orbs | v4 in o};
-assert id -v4 notin o4;
-assert len(v4) eq (1+bt*rt4)/2/(al-bt);
+assert exists(o4){ o : o in orbs | id/2 + v4 in o};
+assert id/2 -v4 notin o4;
+assert len(id/2 + v4) eq (1+bt*rt4)/2/(al-bt);
 
-evals, espaces, FL := IdentifyFusionLaw(v4);
+evals, espaces, FL := IdentifyFusionLaw(id/2 + v4);
 assert #evals eq 6;
 GR, gr := Grading(FL);
 assert Order(GR) eq 2;
-assert MiyamotoInvolution(v2) eq t1;
+assert MiyamotoInvolution(id/2 + v4) eq t1;
 
-assert exists(o4_pair){ o : o in orbs | id-v4 in o};
-assert len(id-v4) eq (1-bt*rt4)/2/(al-bt);
+assert exists(o4_pair){ o : o in orbs | id/2-v4 in o};
+assert len(id/2-v4) eq (1-bt*rt4)/2/(al-bt);
 
 // The extra automorphism is related to a field automorphism fixing rt4
-assert (v4 -id/2)*phi_FCl + (v4-id/2) eq
+assert v4*phi_FCl + v4 eq
            2* ( rt4/5* ( -1/16*(7*al+5)/(al-bt)*ACl.1 + al/2/(al-bt)*(ACl.2+ACl.3+ACl.4+ACl.5) ));
 
 // And also fixing rt3.
-assert (v4 -id/2)*phi_FCl - (v4-id/2) eq
+assert v4*phi_FCl - v4 eq
            -2* ( rt4/5*1/2*rt2*rt3*( ACl.2 + ACl.5 - (ACl.3+ACl.4) + ACl.6) );
 
 // So the extra automorphism phi seems to be related to a field automorphism which inverts rt1 and rt2 and fixes rt3 and rt4.  Perhaps related to sqrt(5)??
 
 // We have found all the remaining axes
 assert #(o2 join o3 join o3_pair join o4 join o4_pair) eq 50;
+
+// -----------------------------
+//
+// Check for new axes
+
+poss := FindMatchingIdempotents(ACl.1, orbs);
+
+assert #poss eq 3;
+
+P<t> := PolynomialRing(F);
+p := CharacteristicPolynomial(AdjointMatrix(ACl.1)) - poss[1,2];
+assert p eq (1-al)/2*t*(9*t^4 - 45/2*t^3 + (25*al^2 - 90*al + 369)/2^4*t^2 -3*(25*al^2 - 90*al + 129)/2^5*t + (5*al - 9)^2/2^5);
+// al neq 1
+
+p := CharacteristicPolynomial(AdjointMatrix(ACl.1)) - poss[3,2];
+assert p eq (al-1)/2^2*t*( (173*al^3 - 387*al^2 + 175*al - 25)/2^3/al^2/(3*al - 7)^2 
+                       + (225*al^6 - 915*al^5 + 739*al^4 - 1042*al^3 + 3779*al^2 - 1475*al + 225)/2^4/al^2/(3*al - 7)^2*t
+                       - (75*al^5 + 185*al^4 - 555*al^3 - 1171*al^2 + 300*al - 50)/2^4/al^2/(3*al - 7)*t^2
+                       + (315*al^4 - 66*al^3 - 1814*al^2 + 150*al - 25)/2^4/al^2/(3*al - 7)*t^3
+                       - 3^2*t^4);
+// al ne 1
+
+p := CharacteristicPolynomial(AdjointMatrix(ACl.1)) - poss[2,2];
+assert p eq (9*al-5)/8*t^2*( -3*t^3 + (35*al^2 + 146*al - 5)/2^5/al*t^2 -(25*al^3 + 55*al^2 + 127*al - 15)/2^6/al*t + (5*al - 1)*(5*al^2 - 2*al + 5)/2^6/al);
+assert poss[2,1] in o3_pair join o3;
+// al = 5/9 is possible - need to check!!
+
+// Checking 
+al := 5/9;
+bt := (5*al-1)/8;
+assert bt eq 2/9;
+
+A, gens, frob := M5A(al);
+
+// For v3, we need the root of 5/al, but this is now sqrt{9}
+assert 5/al eq 9;
+rt2 := 3;
+
+so, id := HasOne(A);
+assert so;
+
+v3 := A.1/2
+           + rt2/10*( A.2+A.5 - (A.3+A.4) + bt/(bt-al)*A.6);
+
+// pick the correct one
+assert exists(x){ x : x in [id/2+v3, id/2-v3] | CharacteristicPolynomial(A.1) eq CharacteristicPolynomial(x)};
+
+assert HasMonsterFusionLaw(x: fusion_values:=[5/9, 2/9]);
+assert InnerProduct(x*frob, x) eq 1;
+
+mymod := function(i,n)                                              
+  if i mod n eq 0 then
+    return n;
+  else
+    return i mod n;
+  end if;
+end function;
+
+xi := function(i)
+  return 1/5*(-A.i + 3*A.mymod(i+2,5) + 3*A.mymod(i+3,5) +A.6);        
+end function;
+
+xip := function(i);
+  return 1/5*(-A.i + 3*A.mymod(i+1,5) + 3*A.mymod(i+4,5) -A.6);
+end function;
+
+ox := {@ xi(i) : i in [1..5] @} join {@ xip(i) : i in [1..5] @};
+
+t1 := MiyamotoInvolution(A.1);
+phi := Matrix(Rationals(),[[ 1,0,0,0,0,0],
+               [ 0,0,1,0,0,0],
+               [ 0,0,0,0,1,0],
+               [ 0,1,0,0,0,0],
+               [ 0,0,0,1,0,0],
+               [ 0,0,0,0,0,-1]]);
+
+
+// phi is an automorphism
+assert forall{ <i,j> : i,j in [1..6] | (A.i*phi)*(A.j*phi) eq (A.i*A.j)*phi};
+Miy := sub<GL(6,F) | t1,t2>;
+G := sub<GL(6,F) | t1,t2,phi>;
+
+assert ox eq {@ A!y : y in Orbit(G, Vector(x)) @};
+assert #ox eq 10;
+
+// So we have 5+10 = 15 axes in total.
+
+assert (A.1 - xi(4))*xi(3) eq bt*(A.1 - xi(4));
+// so tau_{x_2} swaps a_0 and x_3
+// indexing to start at 0, not 1
+
+assert (A.2 - xip(4))*xi(1) eq bt*(A.2 - xip(4));
+assert (A.3 - xi(5))*xi(1) eq bt*(A.3 - xi(5));
+// so \tau_{x_0} switches a_1 and x_3' and and switches a_2 and x_4
+// indexing to start at 0, not 1
+
+// This is enough to give a theoretical proof that Aut = S_5 and Miy = A5
+
+ox_Miy := [ MiyamotoInvolution(y) : y in ox];
+
+Miybar := sub<GL(6,QQ) | [t1, t2] cat ox_Miy>;
+
+assert GroupName(Miybar) eq "A5";
+
+GG := sub<GL(6,QQ) | [t1, phi] cat ox_Miy>;
+assert GroupName(GG) eq "S5";
+
+// This is a 3A subalgebra
+B := sub<A | A.1, xi(3)>;
+assert Dimension(B) eq 4;
+assert xi(4) in B;
+
 
 // ---------------------------------------------
 //
@@ -315,7 +435,7 @@ phi := Matrix(F,[[ 1,0,0,0,0,0],
                [ 0,0,0,0,0,-1]]);
 
 
-// phi is an automorphism
+// phi is an auphitomorphism
 assert forall{ <i,j> : i,j in [1..6] | (A.i*phi)*(A.j*phi) eq (A.i*A.j)*phi};
 Miy := sub<GL(6,F) | t1,t2>;
 G := sub<GL(6,F) | t1,t2,phi>;
@@ -359,23 +479,30 @@ so, id := HasOne(ACl);
 assert so;
 assert id eq 8/(5*(3*al+1))*ACl![1,1,1,1,1,0];
 
-v1 := id/2 + 1/10/(al-bt)*rt1*ACl.6;
-assert v1 in orbs[3];
-assert id - v1 in orbs[3];
+v1 := 1/10/(al-bt)*rt1*ACl.6;
+assert id/2 + v1 in orbs[3];
+assert id/2 - v1 in orbs[3];
 
 // One of the orbits of size 10
-v2 := id/2 + 1/5/al*rt1*( ACl.2+ACl.5 - (ACl.3+ACl.4) + (al-1)/8/(bt-al)*ACl.6);
+v2 := 1/5/al*rt1*( ACl.2+ACl.5 - (ACl.3+ACl.4) + (al-1)/8/(bt-al)*ACl.6);
 
-assert exists(o2){ o : o in orbs | v2 in o};
-assert id -v2 in o2;
+assert exists(o2){ o : o in orbs | id/2 + v2 in o};
+assert id/2 -v2 in o2;
 
 // Two more orbits of size 10
-v3 := id/2 + ACl.1/2
+v3 := ACl.1/2
            + rt2/10*( ACl.2+ACl.5 - (ACl.3+ACl.4) + bt/(bt-al)*ACl.6);
 
-assert exists(o3){ o : o in orbs | v3 in o};
-assert id -v3 notin o3;
-assert exists(o3_pair){ o : o in orbs | id-v3 in o};
+assert exists(o3){ o : o in orbs | id/2 + v3 in o};
+assert id/2 -v3 notin o3;
+assert exists(o3_pair){ o : o in orbs | id/2-v3 in o};
+
+// --------------
+//
+// Double check for new axes
+
+poss := FindMatchingIdempotents(ACl.1, orbs);
+assert #poss eq 0;
 
 // --------------------------------
 //
@@ -421,28 +548,47 @@ assert id eq 8/(5*(3*al+1))*ACl![1,1,1,1,1,0];
 
 
 // Two more orbits of size 10
-v3 := id/2 + ACl.1/2
+v3 := ACl.1/2
            + rt2/10*( ACl.2+ACl.5 - (ACl.3+ACl.4) + bt/(bt-al)*ACl.6);
 
-assert exists(o3){ o : o in orbs | v3 in o};
-assert id -v3 notin o3;
-assert exists(o3_pair){ o : o in orbs | id-v3 in o};
+assert exists(o3){ o : o in orbs | id/2 + v3 in o};
+assert id/2 -v3 notin o3;
+assert exists(o3_pair){ o : o in orbs | id/2-v3 in o};
 
-v4 := id/2
-         + rt4/5* ( 1/16*(7*al+5)/(bt-al)*ACl.1  - al/2/(bt-al)*(ACl.2+ACl.3+ACl.4+ACl.5)
+v4 := rt4/5* ( 1/16*(7*al+5)/(bt-al)*ACl.1  - al/2/(bt-al)*(ACl.2+ACl.3+ACl.4+ACl.5)
                           + 1/2*rt2*rt3*( ACl.2 + ACl.5 - (ACl.3+ACl.4) + ACl.6));
          
-assert exists(o4){ o : o in orbs | v4 in o};
-assert id -v4 notin o4;
-assert exists(o4_pair){ o : o in orbs | id-v4 in o};
+assert exists(o4){ o : o in orbs | id/2 + v4 in o};
+assert id/2 -v4 notin o4;
+assert exists(o4_pair){ o : o in orbs | id/2-v4 in o};
 
 assert #{ o3, o3_pair, o4, o4_pair} eq 4;
+
+// --------------
+//
+// Double check for new axes
+
+poss := FindMatchingIdempotents(ACl.1, orbs);
+assert #poss eq 2;
+
+P<t> := PolynomialRing(F);
+p := CharacteristicPolynomial(AdjointMatrix(ACl.1)) - poss[1,2];
+assert p eq 11/2^3/7*t*( 3^2*5^2*17/2^9 -13*19927/2^9/3^3*t + 419/3^3*t^2 - 17/2^2*t^3);
+// This is not 0 (maybe issue in char 11)
+
+p := CharacteristicPolynomial(AdjointMatrix(ACl.1)) - poss[2,2];
+assert p eq 11/2^3/7*t*( 3^2*5^2*17/2^9 -13*19927/2^9/3^3*t + 419/3^3*t^2 - 17/2^2*t^3);
+assert p eq 2*t^2*( 2^2*31/3^2/7 -379/3^2/7*t + 2^2*37/3/7*t^2 -3*t^3);
+// char ne 2, so no issue
+
 // --------------------------------
 //
 // al = root of f
 
 P<t> := PolynomialRing(QQ);
 f := t^3-6*t^2+1;
+// The roots of f are distinct
+assert Discriminant(f) eq 3^3*31;
 
 A1, gen1, frob1 := M5A();
 F<al> := BaseRing(A1);
@@ -490,40 +636,36 @@ for r in roots do
   assert so;
   assert id eq 8/(5*(3*al+1))*ACl![1,1,1,1,1,0];
 
-  v1 := id/2 + 1/10/(al-bt)*rt1*ACl.6;
-  assert v1 in orbs[3];
-  assert id - v1 in orbs[3];
+  v1 := 1/10/(al-bt)*rt1*ACl.6;
+  assert id/2 + v1 in orbs[3];
+  assert id/2 - v1 in orbs[3];
 
   // One of the orbits of size 10
-  v2 := id/2 + 1/5/al*rt1*( ACl.2+ACl.5 - (ACl.3+ACl.4) + (al-1)/8/(bt-al)*ACl.6);
+  v2 := 1/5/al*rt1*( ACl.2+ACl.5 - (ACl.3+ACl.4) + (al-1)/8/(bt-al)*ACl.6);
 
-  assert exists(o2){ o : o in orbs | v2 in o};
-  assert id -v2 in o2;
+  assert exists(o2){ o : o in orbs | id/2 + v2 in o};
+  assert id/2 -v2 in o2;
 
   // Two more orbits of size 10
-  v3 := id/2 + ACl.1/2
+  v3 := ACl.1/2
              + rt2/10*( ACl.2+ACl.5 - (ACl.3+ACl.4) + bt/(bt-al)*ACl.6);
 
-  assert exists(o3){ o : o in orbs | v3 in o};
-  assert id -v3 notin o3;
-  assert exists(o3_pair){ o : o in orbs | id-v3 in o};
+  assert exists(o3){ o : o in orbs | id/2 + v3 in o};
+  assert id/2 -v3 notin o3;
+  assert exists(o3_pair){ o : o in orbs | id/2-v3 in o};
 
   assert #{o2, o3, o3_pair} eq 3;
+  
+  P<t> := PolynomialRing(FCl);
+  poss := FindMatchingIdempotents(ACl.1, orbs);
+  
+  polys := [ CharacteristicPolynomial(AdjointMatrix(ACl.1)) - CharacteristicPolynomial(AdjointMatrix(o[1])) : o in orbs | ACl!0 notin o and ACl.1 notin o];
+  assert forall{ p : p in polys | not IsZero(p)};
 end for;
 
 
 
-
-
-
-
-
-
-
-
-
-
-//////////////////////////////////////////////////////
+//-------------------------------------------------------------------------
 
 // Theorem: IY5 and M5A are isomorphic in characteristic 5
 

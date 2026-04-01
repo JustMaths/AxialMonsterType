@@ -21,6 +21,20 @@ QQ := Rationals();
 A, gen, frob := M3A();
 F<al,bt> := BaseRing(A);
 
+// eigenspaces
+
+u0 := (3*al^3+3*al^2*bt-al*bt-al)*A.1 + 4*(2*al-1)*A.4;
+ual := al*(al+bt-1)*A.1 + 2*al*(2*al-1)*(A.2+A.3) + 4*(2*al-1)*A.4;
+ubt := A.2-A.3;
+
+assert A.1*u0 eq 0;
+assert A.1*ual eq al*ual;
+
+assert u0*u0 eq -al*(3*al^2 + 3*al*bt - bt - 1)*u0;
+assert u0*ual eq al*(al-1)*(3*al^2 + 3*al*bt - bt - 1)*ual;
+
+assert ual^2 eq al*(3*al - bt - 1)*( -al^2*(3*al^2 + 3*al*bt - 9*al - 2*bt + 4)*A.1 + (al-1)*u0);
+
 // The algebra has an identity if 3*al^2 + 3*al*bt - bt - 1 \neq 0
 so, id := HasOne(A);
 assert so;
@@ -30,15 +44,6 @@ assert id eq -4*(2*al -1)/(al*(3*al^2 + 3*al*bt - bt - 1))*A.4;
 assert Determinant(frob) eq -al^2*(3*al - bt - 1)*(3*al^2 + 3*al*bt - bt - 1)*
                                   (3*al^2 + 3*al*bt - 9*al - 2*bt + 4)^3 / ( 2^9*(2*al-1)^5 );
 
-
-// define some polys
-g1 := 27*al^5 + 30*al^4*bt - 15*al^4 + 3*al^3*bt^2 - 24*al^3*bt + 39*al^3 - al^2*bt^2 + 52*al^2*bt + 29*al^2 - 56*al*bt - 56*al + 16*bt + 16;
-
-assert CharacteristicPolynomial(frob) eq
-    (lm + (3*al^2 + 3*al*bt - 9*al - 2*bt + 4)/(4*(2*al-1)))^2 *
-       (lm^2 - g1/(4*(2*al-1))^2 * lm 
-        -al^2*(3*al - bt - 1)*(3*al^2 + 3*al*bt - bt - 1)*(3*al^2 + 3*al*bt - 9*al - 2*bt + 4)/(32*(2*al-1)^3));
-
 /*
 
 So need to check when bt = 3al-1
@@ -46,6 +51,8 @@ So need to check when bt = 3al-1
 and 3*al^2 + 3*al*bt - bt - 1 = 0
 
 and 3*al^2 + 3*al*bt - 9*al - 2*bt + 4 = 0
+
+NB any pair simutaneously hold if and only if char = 3 and bt = -1.  Then all hold simultaneously
 
 */
 
@@ -99,7 +106,7 @@ phi := hom<F->FF | [Al,3*Al-1]>;
 AA := ChangeRing(A, FF, phi);
 frob2 := ChangeRing(frob, FF, phi);
 
-// Checkiing char poly doesn't help in this case, so
+// Checking char poly doesn't help in this case, so
 // do row and column ops carefully to calculate the nullspace over all fields
 
 M := AddRow(frob2, -(3/2*Al - 1/2), 1,2);
@@ -335,16 +342,16 @@ len_id := (9*al + bt - 5)/(3*al^2 + 3*al*bt - bt - 1);
 assert InnerProduct(id*frob, id) eq len_id;
 
 // We also have x
-x := id/2 + r*(A.1+A.2+A.3) + 2*(2*al - 1)/(al*(3*al^2 + 3*al*bt - bt - 1)) * (3*al + bt + 1)*r*A.4;
+x := r*(A.1+A.2+A.3) + 2*(2*al - 1)/(al*(3*al^2 + 3*al*bt - bt - 1)) * (3*al + bt + 1)*r*A.4;
 
-assert IsIdempotent(x);
+assert IsIdempotent(id/2 +x);
 
-assert InnerProduct(x*frob, x) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (9*al + bt - 5) - (3*al-bt-1)^2*r);
+assert InnerProduct((id/2 +x)*frob, id/2 +x) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (9*al + bt - 5) - (3*al-bt-1)^2*r);
 
 // There are 3 eigenvalues, 1, 0 and 
-assert Dimension(Eigenspace(x, (-3*al + bt + 1)/2*r + 1/2)) eq 2;
+assert Dimension(Eigenspace(id/2 +x, (-3*al + bt + 1)/2*r + 1/2)) eq 2;
 // But it is not Jordan type a in general as not graded.  Have a*a = {1,0,a}
-evals, espace, FL := IdentifyFusionLaw(x);
+evals, espace, FL := IdentifyFusionLaw(id/2 +x);
 assert Order(Grading(FL)) eq 1;
 
 // Becomes Jordan type iff bt = 1/2
@@ -354,9 +361,9 @@ assert Vector(A.1-A.2) in espace[3] and Vector(A.2-A.3) in espace[3];
 // This gives an automorphism which swaps our known orbit 3 axes to a second set
 
 // the fourth idempotent fixed by the Miyamoto group is 1-x
-assert IsIdempotent(id-x);
+assert IsIdempotent(id/2-x);
 
-assert InnerProduct((id-x)*frob,id-x) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (3*al - bt - 1)^2*r +(9*al+bt-5));
+assert InnerProduct((id/2-x)*frob,id/2-x) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (9*al+bt-5) + (3*al - bt - 1)^2*r);
 // Fusion law comes from x
 // Now consider the idempotents in the orbits orbits of size 3
 // clearly, one orbit is the axes
@@ -367,35 +374,35 @@ assert IsIdempotent(A.1) and IsIdempotent(id-A.1);
 assert InnerProduct((id-A.1)*frob, id -A.1) eq (-3*al^2 - 3*al*bt + 9*al + 2*bt - 4)/(3*al^2 + 3*al*bt - bt - 1);
 
 // another idempotent
-y := id/2 + (bt-al)/(2*al-1)*r*A.1 + r*(A.2+A.3) + 2*(4*al*bt + al - bt - 1)/(al*(3*al^2 + 3*al*bt - bt - 1))*r*A.4;
+y := (bt-al)/(2*al-1)*r*A.1 + r*(A.2+A.3) + 2*(4*al*bt + al - bt - 1)/(al*(3*al^2 + 3*al*bt - bt - 1))*r*A.4;
 // NB that id-y is equivalent to picking the other root -r
 
-assert IsIdempotent(y);
+assert IsIdempotent(id/2 +y);
 
 // So if the following fails then magma has picked the other root r
-assert InnerProduct(y*frob, y) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (3*al - bt - 1)^2*r +(9*al+bt-5));
-assert InnerProduct(y*frob, y) eq InnerProduct((id-x)*frob,id-x);
+assert InnerProduct((id/2 +y)*frob, id/2 +y) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (9*al+bt-5) + (3*al - bt - 1)^2*r);
+assert InnerProduct((id/2 +y)*frob, id/2 +y) eq InnerProduct((id/2-x)*frob,id/2-x);
 
-evals, espaces, FL := IdentifyFusionLaw(y);
+evals, espaces, FL := IdentifyFusionLaw(id/2+y);
 lm := (3*al - bt - 1)/2*r + 1/2;
 mu := -(2*bt-1)*(3*al-bt-1)/(4*al - 2)*r + 1/2;
 assert { e[1] : e in evals} eq {1,0,lm, mu};
-assert HasAlmostMonsterFusionLaw(y:fusion_values:=[lm,mu]);
+assert HasAlmostMonsterFusionLaw(id/2+y:fusion_values:=[lm,mu]);
 
 assert Order(Grading(FL)) eq 2;
-assert y*(A.2-A.3) eq mu*(A.2-A.3);
+assert (id/2+y)*(A.2-A.3) eq mu*(A.2-A.3);
 // Miyamoto involution is the same
 
 // Almost Monster type (lm,mu): lm*lm = {1,0,a}
 u_lm := (5*al + bt - 3)*A.1 + (2*al-1)*(A.2+A.3) + 4*(2*al-1)/al*A.4;
-assert y*u_lm eq lm*u_lm;
+assert (id/2+y)*u_lm eq lm*u_lm;
 
 u_0 := al*(al-bt)*(3*al^2 + 3*al*bt - bt - 1)*A.1 - al*(2*al-1)*(3*al^2 + 3*al*bt - bt - 1)*(A.2+A.3)
           + 2*(2*al - 1)*( (3*al - bt - 1)*(2*al*bt - al - bt - 1)*r - (4*al*bt + al - bt - 1) )*A.4;
-assert y*u_0 eq A!0;
+assert (id/2+y)*u_0 eq A!0;
 
 // Becomes Monster type iff bt = 1/2
-V := VectorSpaceWithBasis([ Vector(v) : v in [y,u_0,u_lm,A.2-A.3]]);
+V := VectorSpaceWithBasis([ Vector(v) : v in [id/2+y,u_0,u_lm,A.2-A.3]]);
 coord := Coordinates(V, Vector(u_lm^2));
 assert coord[4] eq 0;
 assert coord[3] eq -(2*al-1)*(2*bt-1);
@@ -403,7 +410,11 @@ assert coord[3] eq -(2*al-1)*(2*bt-1);
 
 // both x and A.4 are fixed by the Miyamoto group, so y in in an orbit of size 3
 
-assert IsIdempotent(id-y);
+assert IsIdempotent(id/2-y);
+assert InnerProduct((id/2 -y)*frob, id/2 -y) eq InnerProduct((id/2+x)*frob,id/2+x);
+
+
+
 
 // Check to see whether there are any idempotents (for any value of al or bt) which have the same char poly as an axis.
 
@@ -423,6 +434,10 @@ assert p eq (al+bt-1)*t*(2*t^2 -3*t +1);
 
 FF<Al> := FunctionField(QQ);
 Bt := 1-Al;
+
+// NB we can't be in the case with no identity
+assert 3*Al^2 + 3*Al*Bt -Bt-1 eq 2*(2*Al-1);
+
 A, gen, frob := M3A(Al, Bt);
 
 so, id := HasOne(A);
@@ -610,6 +625,7 @@ Bt := (1-3*Al^2)/(3*Al-1);
 phi := hom<F->FF | [Al, Bt]>;
 
 A := ChangeRing(A, FF, phi);
+frob := ChangeRing(frob, FF, phi);
 
 t1 := MiyamotoInvolution(A.1);
 t2 := MiyamotoInvolution(A.2);
@@ -637,12 +653,14 @@ r := (Al-1/3)/(2*Al^2);
 
 x := r*(A.1+A.2+A.3) + 6*r^2*A.4;
 assert IsIdempotent(x);
+assert InnerProduct(x*frob, x) eq (3*Al-1)/4/Al^3;
 
 // zero is also an idempotent and so these are the only two in an orbit of size 1
 // For the orbits of size 3, we have the axes and
 
 y := 1/Al*A.1 -x  + 2*r*(Al-1)/Al^2*A.4;
 assert IsIdempotent(y);
+assert InnerProduct(y*frob, y) eq (3*Al-1)/4/Al^3;
 
 assert y eq (Al+1/3)/(2*Al^2)*A.1 - r*(A.2 + A.3) - r*(Al+1)/Al^2*A.4;
 // These are the only idempotents.
@@ -665,7 +683,7 @@ assert p eq (2*Al-1)/Al^2/(3*Al-1)*(
 
 // In 3A, al ne 1/2 and in this case, al ne 1/3, so, as al ne 0,1, this poly can never be identically zero.
 
-// this is for id - a_i
+// this is for y
 p := CharacteristicPolynomial(AdjointMatrix(y)) - CharacteristicPolynomial(AdjointMatrix(A.1));
 P<t> := Parent(p);
 
@@ -673,7 +691,7 @@ assert p eq (2*Al - 1)*(Al + 1)/Al^2/(3*Al-1)*(Al*t^3
                        + 3*(Al - 1)*(2*Al^2 + Al + 1)/4*t^2
                        - (6*Al^3 - 3*Al^2 + 4*Al - 3)/4*t);
 
-// Al is not 1/2, 1/3,1, so the only posibility to check here is Al = -1
+// Al is not 1/2, 1/3,1, so the only possibility to check here is Al = -1
 
 assert Evaluate(Bt,-1) eq 1/2;
 // So Al can't be -1 either as we assume that Bt is not 1/2 (This is when 3A \cong IY3)

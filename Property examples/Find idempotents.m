@@ -16,11 +16,12 @@ function IdempotentIdeal(A)
   return I;
 end function;
 
-function IdealOfSingularPoints(A: field := QQ)
+// base_ring must be ring of integers of the field
+function IdealOfSingularPoints(A: base_ring := QQ)
   F := BaseRing(A);
   P := PolynomialRing(F, Dimension(A));
-  PP := PolynomialRing(field, Dimension(A)+ Rank(F));
-  PF := PolynomialRing(field, Rank(F));
+  PP := PolynomialRing(base_ring, Dimension(A)+ Rank(F));
+  PF := PolynomialRing(base_ring, Rank(F));
 
   phiF := hom<F->PF | [PF.i : i in [1..Rank(F)]]>;
   phiP := hom<P->PP | [ PP.i : i in [1..Dimension(A)]]>;

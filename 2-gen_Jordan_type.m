@@ -192,7 +192,7 @@ intrinsic SpinFactorCover(: base_field := QQ) -> AlgGen, SetIndx, AlgMatElt
   G := sub<Sym(3) | (1,2)>;
   
   V := VectorSpace(F, 3);
-  S := [<1,1,V.1>, <1,2,1/2*(V.1+V.2)>, <1,3,V!0>, <3,3,V!0>];
+  S := [<1,1,V.1>, <1,2,1/2*(V.1+V.2)+ V.3>, <1,3,V!0>, <3,3,V!0>];
   
   mult := BuildSymmetricMultiplication(S, G);
   A := Algebra<F, 3 | mult>;

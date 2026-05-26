@@ -509,6 +509,7 @@ intrinsic IY3(al::RngElt, mu::RngElt) -> AlgGen, SetIndx, AlgMatElt
   }
   so, F := ExistsCoveringStructure(Parent(al), Parent(mu));
   require so: "The given values must lie in the same field.";
+  F := FieldOfFractions(F);  
   require Characteristic(F) ne 2: "The characteristic of the field cannot be 2.";
   require F!al notin { F | 1,0,1/2}: "The value of alpha cannot be 1, 0, or 1/2.";
   

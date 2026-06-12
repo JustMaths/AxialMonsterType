@@ -137,6 +137,13 @@ B, quo := quo<A|I>;
 BB := M4Qx();
 assert [[ Eltseq(v) : v in r] : r in BasisProducts(B)] eq [[ Eltseq(v) : v in r] : r in BasisProducts(BB)];
 
+assert Dimension(sub<B|B.1+B.3, B.2>) eq 2;
+c := B.1+B.3+B.2 +2*B.2*(B.1+B.3);
+assert c eq -B![1,1,1];
+assert c^2 eq c;
+assert B.2*(B.1+B.3) eq -1/2*( (B.1+B.3) + B.2 - c);
+// This is 3C(-1)^times
+
 // -------------------------------------
 //
 // 4B(-1, 1/2; nu)^\times

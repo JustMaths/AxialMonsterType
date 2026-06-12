@@ -18,8 +18,15 @@ ZZ := Integers();
 //
 // =========================================================
 
-A, gen, frob := M4A();
+A, gens, frob := M4A();
 F<bt> := BaseRing(A);
+
+// Confirm the algebra is indeed a 2-generated Monster type algebra
+
+assert sub<A | gens> eq A;
+assert HasMonsterFusionLaw(gens[1]: fusion_values:=[1/4, bt]);
+assert HasMonsterFusionLaw(gens[2]: fusion_values:=[1/4, bt]);
+assert IsFrobeniusForm(frob, A);
 
 // identity
 so, id := HasOne(A);
@@ -71,7 +78,7 @@ assert Determinant(frob) eq -1/8*bt*(2*bt-1)^3;
 // Since the characteristic is not 2 and bt can't be 0, we just need to check bt = 1/2
 
 // Check bt = 1/2
-A, gen, frob := M4A(1/2);
+A, gens, frob := M4A(1/2);
 
 // no identity
 assert not HasOne(A);
@@ -148,7 +155,7 @@ assert r*r eq -8*A.5;
 
 // These are some calculations which support a theoretical proof
 
-A, gen, frob := M4A();
+A, gens, frob := M4A();
 F<bt> := BaseRing(A);
 // Changing basis makes the equations much nicer and so massively speeds up the Groebner basis
 bas := [A.1-A.3,A.2-A.4,A.1+A.3, A.2+A.4, A.5];
@@ -192,7 +199,7 @@ rt2 := Sqrt(FCl!1/bt/(bt+3/2));
 ACl := ChangeRing(A, FCl);
 frobCl := ChangeRing(frob, FCl);
 
-G_FCl := ChangeRing(G, FCl);
+GCl := ChangeRing(G, FCl);
 
 // The orbits of length 1 are the identity and zero
 so, id := HasOne(ACl);
@@ -204,6 +211,14 @@ assert InnerProduct(id*frobCl, id) eq 4;
 // When bt ne -3/2
 v1 := 1/4*rt2*ACl![1,1,1,1,0] + rt1/2*ACl![1,1,-1,-1,0] -2*(2*bt+1)/(2*bt-1)*rt2*ACl.5;
 
+idems := [ACl!0, id, ACl.1, id-ACl.1, id/2 + v1, id/2 - v1];
+orbs := {@ {@ ACl!u : u in Orbit(GCl, Vector(v))@} : v in idems @};  // Need to have found the order for Orbit to work
+Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
+
+assert #orbs eq 6;
+assert {* #o : o in orbs*} eq {* 1^^2, 4^^4 *};
+assert &+[ #o : o in orbs] eq 18;
+
 assert IsIdempotent(id/2 + v1);
 assert InnerProduct((id/2 + v1)*frobCl, id/2 + v1) eq 2*(1 - bt*rt2);
 
@@ -213,12 +228,44 @@ Gr, gr := Grading(FL);
 assert Order(Gr) eq 2;
 assert MiyamotoInvolution(id/2 + v1) eq phi;
 
-o1 := {@ ACl!u : u in Orbit(G_FCl, Vector(id/2+v1))@};
+o1 := {@ ACl!u : u in Orbit(GCl, Vector(id/2+v1))@};
 assert #o1 eq 4;
 assert id/2-v1 notin o1;
 
 assert IsIdempotent(id/2-v1);
 assert InnerProduct((id/2-v1)*frobCl,(id/2- v1)) eq 2*(1 +bt*rt2);
+
+I := IdempotentIdeal(A);
+prim := PrimaryDecomposition(I);
+prim0 := [ J : J in prim | Dimension(J) lt 1];
+var := {@ ACl![ e : e in t] : t in Variety(&meet prim0, FCl) @};
+assert #var eq 22;
+
+exceptions := var diff &join orbs; 
+
+// The exceptions actually live in the double axis subalgebra where there is an 1-dim family of idempotents
+assert forall{ e : e in exceptions | e[1] eq e[3] and e[2] eq e[4]};
+
+poss := CheckForMatchingCharactisticPoly(ACl.1, orbs);
+
+assert #poss eq 2;
+
+I := poss[1,4]; P := Generic(I);
+assert poss[1,3] eq [* <rt2, P.1>, <bt, P.2> *];
+
+assert 2*P.2 -1 in I;
+// contradiction as bt ne 1/2 in this case
+
+I := poss[2,4]; P := Generic(I);
+assert poss[2,3] eq [* <rt2, P.1>, <bt, P.2> *];
+
+assert 2*P.2 -1 in I;
+// contradiction as bt ne 1/2 in this case
+
+// So no new axes
+
+
+// OR
 
 // Check the characteristic polynomials
 // Only ones we need to check are 1/2id \pm v1 and the infinite family
@@ -305,7 +352,7 @@ assert char eq t*(t-1)*(t-1/2)*(t - 1/2*(1 + lm + (4*bt-1)*mu))*(t - 1/2*(1 + mu
 //
 // Check bt eq 1/2
 
-A, gen, frob := M4A(1/2);
+A, gens, frob := M4A(1/2);
 I := IdempotentIdeal(A);
 assert Dimension(I) eq 1;
 
@@ -419,7 +466,7 @@ assert GCD(ChangeUniverse(coeffs, Integers())) eq 1;
 // Nilpotents
 
 // There are nilpotent elements too
-A, gen, frob := M4A();
+A, gens, frob := M4A();
 F<bt> := BaseRing(A);
 FCl := AlgebraicClosure(F);
 
@@ -443,7 +490,7 @@ assert Variety(primN[2], FCl) eq [<0,0,0,0,0>];
 
 
 // Check bt = 1/2
-A, gen, frob := M4A(1/2);
+A, gens, frob := M4A(1/2);
 
 N := NilpotentIdeal(A);
 P := Generic(N);

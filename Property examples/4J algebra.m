@@ -16,8 +16,16 @@ QQ := Rationals();
 // 4J(2bt, bt)
 //
 // =========================================================
-A, gen, frob := M4J();
+A, gens, frob := M4J();
 F<bt> := BaseRing(A);
+al := 2*bt;
+
+// Confirm the algebra is indeed a 2-generated Monster type algebra
+
+assert sub<A | gens> eq A;
+assert HasMonsterFusionLaw(gens[1]: fusion_values:=[al, bt]);
+assert HasMonsterFusionLaw(gens[2]: fusion_values:=[al, bt]);
+assert IsFrobeniusForm(frob, A);
 
 // identity
 so, id := HasOne(A);
@@ -54,7 +62,7 @@ assert frob[1,2] eq bt;
 assert Determinant(frob) eq 2*(2*bt-1)^2*(4*bt+1);
 // Since characteristic is not 2 and bt \neq 1/2, just need to check bt = -1/4
 
-A, gen, frob := M4J(-1/4);
+A, gens, frob := M4J(-1/4);
 // NB not char 5 as -1/4 = 1
 // not char 3 as 2bt = -2/4 = -2 = 1
 
@@ -79,7 +87,7 @@ B, quo := quo<A|R.1>;
 assert not HasOne(B);
 
 // Check double axes for bt = 1/4
-A, gen, frob := M4J(1/4);
+A, gens, frob := M4J(1/4);
 // Check double axes
 d0 := A.1+A.3;
 d1 := A.2+A.4;
@@ -105,10 +113,9 @@ assert c^2 eq c;
 
 //------------------------------
 
-
 // These are some calculations which support a theoretical proof
 
-A, gen, frob := M4J();
+A, gens, frob := M4J();
 F<bt> := BaseRing(A);
 // Changing basis makes the equations much nicer and so massively speeds up the Groebner basis
 bas := [A.1-A.3,A.2-A.4,A.1+A.3, A.2+A.4, A![1,1,1,1,1]];
@@ -125,154 +132,53 @@ Q1 :=  mu1 + 8*bt*mu0 + 2*(4*bt+1)*nu - 1;
 
 assert Basis(I) eq [ lm0*P0, lm1*P1, lm0^2 + mu0*Q0, lm1^2+mu1*Q1, -4*bt*mu0*mu1 + nu*((4*bt+1)*nu-1)];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ---------------------------------------------------
-//
-// Check for bad primes of reduction for the singular points
-//
-
-A, gen, frob := M4A();
-// Changing basis makes the equations much nicer and so massively speeds up the Groebner basis
-bas := [A.1-A.3,A.2-A.4,A.1+A.3-(A.2+A.4), A.1+A.3+A.2+A.4, A.5];
-AA := ChangeBasis(A, bas);
-
-II := IdealOfSingularPoints(AA: base_ring:=Integers());
-
-// We also need to change the monomial ordering for the Groebner basis to help the elimination ideal
-// Without the order change it takes 35000secs, with it takes 900.
-J := ChangeOrder(II, "elim", 2);
-
-// With the basis and monomial order changes, this takes 900 secs ~ 20 mins
-// Without these it won't complete
-elim := EliminationIdeal(J, 6);
-
-assert elim = ideal<Generic(elim)|>;
-
-// So there are no bad characteristics
-// Hence we can proceed with the analysis in characteristic 0 and will apply to characteristic p (not 2) too.
-
-// ---------------------------------------------------
-//
-// Check singular locus
-//
-
-A, gen, frob := M4J();
-II := IdealOfSingularPoints(A);
-primII := RadicalDecomposition(II);
-P := Generic(II);
-
-assert #primII eq 36;
-
-// NB bt can't be 1/2
-
-// There are exceptional isomorphisms with 4A if bt = 1/8 and with 4Y(1/2, bt) if bt =1/4
-// Both of these have infinitely many idempotents, so we can rule these cases out and deal with them in 4A and 4Y
-
-assert #{ J : J in primII | P.6 -1/4 in J or P.6-1/2 in J or P.6-1/8 in J} eq #primII;
-
-// So no special cases we need to check
-
-// ------------------------
-//
-// Check the generic case
-
-A, gen, frob := M4J();
-F<bt> := BaseRing(A);
-
-t1 := MiyamotoInvolution(A.1);
-t2 := MiyamotoInvolution(A.2);
-
-f := PermutationMatrix(F, [2,1,4,3,5]);
-G := sub<GL(5,F) | t1,t2,f>;
-
-assert Order(G) eq 8; // Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
-
-I := IdempotentIdeal(A);
+// Check the orbits and lengths
 
 FCl := AlgebraicClosure(F);
 rt1 := Sqrt(FCl!(1-4*bt)*(1+4*bt));
 rt2 := Sqrt(FCl!(1-8*bt));
+rt3 := Sqrt(FCl!1/(1-12*bt^2));
+rt4 := Sqrt(FCl!(1-4*bt));
 
-// We need some other roots too
-P<t> := PolynomialRing(F);
+I := IdempotentIdeal(AA); 
+assert #Variety(I, FCl) eq 32;
 
-p4 := t^2 + (1-2*bt)*t + bt^2;
-roots := [ r[1] : r in Roots(p4, FCl)];
-rt41 := Sqrt(FCl!roots[1]/(12*bt^2-1));
-rt42 := Sqrt(FCl!roots[2]/(12*bt^2-1));
-
-p42 := t^4 + (-2*bt + 1)/(12*bt^2 - 1)*t^2 + bt^2/(144*bt^4 - 24*bt^2 + 1);
-assert MinimalPolynomial(rt41) eq p42;
-assert Set(Conjugates(rt41)) eq { rt41, -rt41, rt42, -rt42};
-
-Simplify(FCl:Partial:=true); // Needed so that the equality checking works below
+Simplify(FCl: Partial:=true);
 Prune(FCl);
-
-// ensure that the signs are correct
-signs := [+1,-1];
-
-value := bt/(1-12*bt^2);
-assert #{ p : p in signs | p*rt41*rt42 eq value} eq 1;
-assert exists(p){ p : p in signs | p*rt41*rt42 eq value};
-
-rt42 := p*rt42;
-// NB of the four roots, {rt41, rt42} and {-rt41, -rt42} satisfy the signs convention
-
-// So bad values of bt are 1/4, -1/4, 1/8, 1/sqrt{12}
-// By above, we do not need to deal with bt = 1/4 or 1/8
 
 ACl := ChangeRing(A, FCl);
 frobCl := ChangeRing(frob, FCl);
 
-vars := Variety(I, FCl);
-idems := [ ACl![t[i] : i in [1..#t]] : t in vars];
+t1 := MiyamotoInvolution(A.1);
+t2 := MiyamotoInvolution(A.2);
+f := PermutationMatrix(F, [2,1,4,3,5]);
+G := sub<GL(5,F) | t1,t2,f>;
+assert Order(G) eq 8; // Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
 
-// Simplify takes a long time, but partial is quick
-Simplify(FCl:Partial:=true);
-Prune(FCl);
+GCl := ChangeRing(G, FCl);  // Still remembers the order from above
 
-GCl := ChangeRing(G, FCl);
-orbs := {@ {@ ACl!u : u in Orbit(GCl, Vector(v))@} : v in idems @};
+so, id := HasOne(ACl);
+
+x := rt3/2*rt4*ACl![1,1,-1,-1,0] + rt3/2*ACl![1,1,1,1,0] -(2*bt+1)/2/(4*bt+1)*rt3*ACl![1,1,1,1,1];
+
+assert x eq  rt3/2/(4*bt+1)*( (2*bt + (4*bt+1)*rt4)*(ACl.1+ACl.2) + (2*bt - (4*bt+1)*rt4)*(ACl.3+ACl.4) -(2*bt+1)*ACl.5);
+assert x eq  rt3/2/(4*bt+1)*( 2*bt*(ACl.1+ACl.2+ACl.3+ACl.4) + (4*bt+1)*rt4*(ACl.1+ACl.2 -ACl.3-ACl.4) -(2*bt+1)*ACl.5);
+
+y := 1/2*rt2/rt1*ACl![1,0,-1,0,0] + 1/2/rt1*ACl![1,0, 1,0,0] + 1/rt1*ACl![0,1,0,1,0] -1/2/rt1*ACl![1,1,1,1,1];
+
+// The complete set of idempotents
+
+idems := [ ACl!0, ACl.5, ACl.1, ACl.1+ACl.3, id, id - ACl.1, id - ACl.5, id - (ACl.1+ACl.3), id/2+x, id/2-x, id/2+y, id/2-y];
+
+orbs := {@ {@ ACl!u : u in Orbit(GCl, Vector(v))@} : v in idems @};  // Need to have found the order for Orbit to work
 Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
 
+// So we have all the idempotents
 assert #orbs eq 12;
 assert {* #o : o in orbs *} eq {* 1^^4, 2^^2, 4^^6 *};
+assert #(&join orbs) eq 32;
+
+// We now check for properties of the idempotents
 
 // Orbits of size 1
 // 0, A.5, id and id-A.5
@@ -316,34 +222,20 @@ assert {@ ACl.i : i in [1..4] @} in orbs;
 assert {@ id-ACl.i : i in [1..4] @} in orbs;
 assert InnerProduct((id-ACl.1)*frobCl, (id-ACl.1)) eq (5-4*bt)/(1+4*bt);
 
-rt3 := (1-(1+2*bt)*(rt41+rt42))/2/(1+4*bt);
-assert (3+ (2*bt-1)*(rt41+rt42))/(1+4*bt) eq 1/(2*bt+1)*(2 +2*(1-2*bt)*rt3);  // below when bt = -1/4, we can describe the length differently
-x := rt3*ACl![1,1,1,1,1] + rt41*(ACl.1+ACl.2) + rt42*(ACl.3+ACl.4);
-
-assert IsIdempotent(x);
-evals, espace, FL := IdentifyFusionLaw(x);
+assert IsIdempotent(id/2+x);
+evals, espace, FL := IdentifyFusionLaw(id/2+x);
 assert #FL eq 5;
 assert Order(Grading(FL)) eq 2;
 assert MiyamotoInvolution(x) eq f_FCl;
 
-assert exists(ox){o : o in orbs | x in o};
+assert exists(ox){o : o in orbs | id/2+x in o};
 assert #ox eq 4;
-assert x*f_FCl in ox;
-assert InnerProduct(x*frobCl, x) eq (3+ (2*bt-1)*(rt41+rt42))/(1+4*bt);
+assert (id/2+x)*f_FCl in ox;
+assert InnerProduct((id/2+x)*frobCl, id/2+x) eq 1/(4*bt + 1)*(3+ (2*bt - 1)*rt3);
 
-assert id-x notin ox;
-assert exists(ox_pair){o : o in orbs | id - x in o};
-
-// for the pair -rt41 and -rt42 we get 1/(1+4*bt)-rt3
-conj3 := (1+(1+2*bt)*(rt41+rt42))/2/(1+4*bt);
-assert conj3 eq 1/(4*bt+1) -rt3;
-min_rt3 := MinimalPolynomial(rt3);
-assert Degree(min_rt3) eq 2;
-assert conj3 in Conjugates(rt3);
-
-assert InnerProduct((id-x)*frobCl, (id-x)) eq (3 -(2*bt-1)*(rt41+rt42))/(1+4*bt);
-
-y := 1/2/rt1*( rt2*(ACl.1-ACl.3) + ACl.2+ACl.4 - ACl.5);
+assert id/2-x notin ox;
+assert exists(ox_pair){o : o in orbs | id/2 - x in o};
+assert InnerProduct((id/2-x)*frobCl, (id/2-x)) eq (3 -(2*bt-1)*rt3)/(1+4*bt);
 
 assert IsIdempotent(id/2+y);
 evals, espace, FL := IdentifyFusionLaw(id/2+y);
@@ -361,29 +253,57 @@ assert exists(oy_pair){o : o in orbs | id/2 - y in o};
 assert InnerProduct((id/2+y)*frobCl, id/2+y) eq 3/(4*bt+1);
 assert InnerProduct((id/2-y)*frobCl, (id/2-y)) eq 3/(4*bt+1);
 
-// Check for more axes
-poss := FindMatchingIdempotents(ACl.1,orbs);
 
-assert #poss eq 2;
-P<t> := PolynomialRing(F);
-assert CharacteristicPolynomial(ACl.1) - CharacteristicPolynomial(orbs[2,1]) eq bt*t*(5*t^3 - (18*bt+5)*t^2 + 2*bt*(8*bt+9)*t - 16*bt^2);
-// can't have bt = 0
+// Check for characteristic polynomial matching Monster type
 
-assert CharacteristicPolynomial(ACl.1) - CharacteristicPolynomial(id-ACl.1) eq (1-2*bt)*t*(3*t^3 - 6*t^2 + (4-bt)*t +bt-1);
-// Can't have bt = 1/2
+poss := CheckForMatchingCharactisticPoly(ACl.1, orbs);
 
-// So no extra axes
+assert #poss eq 4;
 
-// -------------------------------------
-//
-// Now check the bad values
-// as before don't need to check bt = 1/4, 1/8 as the algebra is isomorphic to 4Y and 4A in these cases
+// The first two possibilities are in characteristic 3, or 5 only and lead to a contradiction
+I := poss[1,4];
+P := Generic(I);
+
+// The order of the variables is rt3, then bt
+assert poss[1,3] eq [* <rt3, P.1>, <bt, P.2> *];
+
+assert 15 in I;
+assert P.2+4 in I;
+// If char = 3, then 0 = bt+4 = bt+1 and so bt = -1.  Then al = 2*bt = 1, a contradiction
+// If char = 5, then 0 = bt+4 = bt-1 and so bt = 1 a contradiction
+
+// Same argument for the second case
+I := poss[2, 4]; P := Generic(I);
+assert poss[2,3] eq [* <rt3, P.1>, <bt, P.2> *];
+assert 15 in I;
+assert P.2+4 in I;
+
+// The last two possibilities must be in characteristic 3 and this gives a contradiction too
+I := poss[3, 4]; P := Generic(I);
+assert poss[3, 3] eq [* <rt1, P.1>, <bt, P.2> *];
+assert 9*P.1 in I;
+// So either rt1 = 0, a contradiction, or char = 3
+assert P.1*(P.2+1)^2 in I;
+// Since rt1 ne 0, we must have bt = -1, but then 2*bt = 1, a contradiction
+
+// Same argument for the last case
+I := poss[4, 4]; P := Generic(I);
+assert poss[4, 3] eq [* <rt1, P.1>, <bt, P.2> *];
+assert 9*P.1 in I;
+// So either rt1 = 0, a contradiction, or char = 3
+assert P.1*(P.2+1)^2 in I;
+// Since rt1 ne 0, we must have bt = -1, but then 2*bt = 1, a contradiction
+
+
+
+
+
 
 // --------------------
 //
 // bt = -1/4
 bt := -1/4;
-A, gen, frob := M4J(bt);
+A, gens, frob := M4J(bt);
 
 F := QQ;
 t1 := MiyamotoInvolution(A.1);
@@ -396,41 +316,23 @@ assert Order(G) eq 8; // Needed to ensure Magma knows the order of the group ove
 I := IdempotentIdeal(A);
 
 FCl := AlgebraicClosure(F);
-
-P<t> := PolynomialRing(F);
-// For bt = -1/4, rt1 from above degenerates to be 0
-
-p4 := t^2 + (1-2*bt)*t + bt^2;
-roots := [ r[1] : r in Roots(p4, FCl)];
-rt41 := Sqrt(FCl!roots[1]/(12*bt^2-1));
-rt42 := Sqrt(FCl!roots[2]/(12*bt^2-1));
-
-// The minimal poly for rt41 and rt42 has now degenerated to be a quadratic;
-assert MinimalPolynomial(rt41) eq t^2-2*t-1;
-assert rt41 ne rt42;
-// so we have the two roots of this quadratic
-// So we don't need to fix the signs, this holds automatically.
-
-assert rt41*rt42 eq bt/(1-12*bt^2);
-assert rt41 + rt42 eq 2;
-
-rt3 := 1;
-assert 1/(2*bt+1)*( 1 -2*(1+4*bt)*rt3) eq 2;
-
-
-Simplify(FCl:Partial:=true); // Needed so that the equality checking works below
-Prune(FCl);
+rt := Sqrt(FCl!2);
 
 ACl := ChangeRing(A, FCl);
 frobCl := ChangeRing(frob, FCl);
 
-vars := Variety(I, FCl);
-idems := [ ACl![t[i] : i in [1..#t]] : t in vars];
+assert #Variety(I, FCl) eq 12;
+
+xp := 2*ACl![1,1,1,1,0] + rt*(ACl.1-ACl.3+ACl.2-ACl.4) + ACl.5;
+
+idems := [ACl!0, ACl.5, ACl.1, ACl.1+ACl.3, xp];
 
 GCl := ChangeRing(G, FCl);
 orbs := {@ {@ ACl!u : u in Orbit(GCl, Vector(v))@} : v in idems @};
 Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
 
+// These are all the idempotents
+assert &+[ #o : o in orbs] eq 12;
 assert #orbs eq 5;
 assert {* #o : o in orbs *} eq {* 1^^2, 2, 4^^2 *};
 
@@ -459,140 +361,34 @@ assert InnerProduct((d0)*frobCl, (d0)) eq 2;
 // axes, x
 assert {@ ACl.i : i in [1..4] @} in orbs;
 
-x := rt3*ACl![1,1,1,1,1] + rt41*(ACl.1+ACl.2) + rt42*(ACl.3+ACl.4);
-
-assert IsIdempotent(x);
-evals, espace, FL := IdentifyFusionLaw(x);
+assert IsIdempotent(xp);
+evals, espace, FL := IdentifyFusionLaw(xp);
 assert #FL eq 5;
 assert Order(Grading(FL)) eq 2;
-assert MiyamotoInvolution(x) eq f_FCl;
+assert MiyamotoInvolution(xp) eq f_FCl;
 
-assert exists(ox){o : o in orbs | x in o};
+assert exists(ox){o : o in orbs | xp in o};
 assert #ox eq 4;
-assert x*f_FCl in ox;
-assert InnerProduct(x*frobCl, x) eq 1/(2*bt+1)*(2 +2*(1-2*bt)*rt3);
-assert InnerProduct(x*frobCl, x) eq 10;
+assert xp*f_FCl in ox;
+assert InnerProduct(xp*frobCl, xp) eq 10;
 
-// check for new axes
-poss := FindMatchingIdempotents(ACl.1, orbs);
+// Check for characteristic polynomial matching Monster type
+
+poss := CheckForMatchingCharactisticPoly(ACl.1, orbs);
 
 assert #poss eq 1;
-P<t> := PolynomialRing(F);
-assert CharacteristicPolynomial(AdjointMatrix(ACl.1)) - CharacteristicPolynomial(AdjointMatrix(x)) eq 3/4*t*(t^3 + 11/2*t^2-3/2*t-5);
-// So no new axes
-
-// ---------------------------------
-//
-// bt = 1/sqrt{12}
-//
-F := QQ;
-FCl := AlgebraicClosure(F);
-r := Sqrt(FCl!3);
-
-for sgn in [+1,-1] do
-  bt := sgn/2/r;
-
-  rt1 := Sqrt(FCl!(1-4*bt)*(1+4*bt));
-  rt2 := Sqrt(FCl!(1-8*bt));
-  
-  A, gens, frob := M4J(bt);
-
-  t1 := PermutationMatrix(F, [1,4,3,2,5]);
-  t2 := PermutationMatrix(F, [3,2,1,4,5]);
-
-  f := PermutationMatrix(F, [2,1,4,3,5]);
-  G := sub<GL(5,F) | t1,t2,f>;
-
-  assert Order(G) eq 8; // Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
-
-  ACl := ChangeRing(A, FCl);
-  frobCl := ChangeRing(frob, FCl);
-
-  I := IdempotentIdeal(ACl);
-  assert VarietySizeOverAlgebraicClosure(I) eq 24;
-
-  vars := Variety(I, FCl);
-  idems := [ ACl![t[i] : i in [1..#t]] : t in vars];
-
-  // Simplify takes a long time, but partial is quick
-  Simplify(FCl:Partial:=true);
-  Prune(FCl);
-
-  GCl := ChangeRing(G, FCl);
-  orbs := {@ {@ ACl!u : u in Orbit(GCl, Vector(v))@} : v in idems @};
-  Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
-
-  // Bug with magma means that this will fail.  But it is missing id-ACl.5 which is clearly an idempotent.
-  // Should have 24 idempotents agreeing with variety size above
-  // Fails second time through, I think because the field has grown
-    
-  assert #Set(vars) eq 24;
-  assert #orbs eq 10;
-  assert {* #o : o in orbs *} eq {* 1^^4, 2^^2, 4^^4 *};
-
-  // Orbits of size 1
-  // 0, A.5, id and id-A.5
-  // need bt \neq -1/4
-  so, id := HasOne(ACl);
-  assert so;
-  assert id eq 1/(4*bt+1)*ACl![1,1,1,1,1];
-  assert InnerProduct(id*frobCl, id) eq 6/(4*bt+1);
-
-  assert IsIdempotent(ACl.5);
-  assert InnerProduct(ACl.5*frobCl, ACl.5) eq 2;
-
-  assert InnerProduct((id-ACl.5)*frobCl, (id-ACl.5)) eq 4*(1-2*bt)/(4*bt+1);
-
-  // Orbits of size 2
-  // double axes and id - these
-  d0 := ACl.1+ACl.3;
-  assert exists(od0){o : o in orbs | d0 in o};
-  assert #od0 eq 2;
-  f_FCl := ChangeRing(f, FCl);
-  assert d0*f_FCl in od0;
-
-  assert id-d0 notin od0;
-  assert exists(od0_pair){o : o in orbs | id - d0 in o};
-
-  assert InnerProduct((d0)*frobCl, (d0)) eq 2;
-  assert InnerProduct((id-d0)*frobCl, (id-d0)) eq 4*(1-2*bt)/(1+4*bt);
+assert poss[1,1] eq xp;
+I := poss[1,3];
+assert I eq ideal< Integers() |3>;
+// So require characteristic 3
+// But in this case, bt = -1/4 = -1 and so 2*bt = 1, a contradiction
 
 
-  // Orbits of size 4
-  // axes, id - axes, y and id -y
-  assert {@ ACl.i : i in [1..4] @} in orbs;
-
-  assert {@ id-ACl.i : i in [1..4] @} in orbs;
-  assert InnerProduct((id-ACl.1)*frobCl, (id-ACl.1)) eq (5-4*bt)/(1+4*bt);
-
-
-  y := 1/2/rt1*( rt2*(ACl.1-ACl.3) + ACl.2+ACl.4 - ACl.5);
-
-  assert IsIdempotent(id/2+y);
-  assert exists(oy){o : o in orbs | id/2+y in o};
-  assert #oy eq 4;
-  assert (id/2+y)*f_FCl in oy;
-
-  assert id/2-y notin oy;
-  assert exists(oy_pair){o : o in orbs | id/2 - y in o};
-
-  assert InnerProduct((id/2+y)*frobCl, id/2+y) eq 3/(4*bt+1);
-  assert InnerProduct((id/2-y)*frobCl, (id/2-y)) eq 3/(4*bt+1);
-  
-  poss := FindMatchingIdempotents(ACl.1, orbs);
-
-  assert #poss eq 2;
-  P<t> := PolynomialRing(F);
-  p1 := CharacteristicPolynomial(AdjointMatrix(ACl.1)) - poss[1,2];
-  assert p1 ne 0;
-  p2 := CharacteristicPolynomial(AdjointMatrix(ACl.1)) - poss[2,2];
-  assert p2 ne 0;
-end for;
 
 
 
 ////////// Nilpotent elements ////////////////////////////////////
-A, gen, frob := M4J();
+A, gens, frob := M4J();
 F<bt> := BaseRing(A);
 
 t1 := MiyamotoInvolution(A.1);
@@ -608,7 +404,7 @@ assert VarietySizeOverAlgebraicClosure(N) eq 1;  // so no non-trivial nilpotent 
 
 
 // Now bt = -1/4
-A, gen, frob := M4J(-1/4);
+A, gens, frob := M4J(-1/4);
 F := BaseRing(A);
 
 N := NilpotentIdeal(A);

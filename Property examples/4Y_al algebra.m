@@ -16,9 +16,16 @@ QQ := Rationals();
 // 4Y(al, (1-al^2)/2 )
 //
 // =========================================================
-A, gen, frob := M4Y_al();
+A, gens, frob := M4Y_al();
 F<al> := BaseRing(A);
 bt := (1-al^2)/2;
+
+// Confirm the algebra is indeed a 2-generated Monster type algebra
+
+assert sub<A | gens> eq A;
+assert HasMonsterFusionLaw(gens[1]: fusion_values:=[al, bt]);
+assert HasMonsterFusionLaw(gens[2]: fusion_values:=[al, bt]);
+assert IsFrobeniusForm(frob, A);
 
 // identity
 so, id := HasOne(A);
@@ -57,7 +64,7 @@ assert frob[1,3] eq al/2;
 assert Determinant(frob) eq -1/16*al^4*(al-2)^3/(al+1);
 // Since the characteristic is not 2 and al \neq 0 or -1, we just need to check al = 2
 
-A, gen, frob := M4Y_al(2);
+A, gens, frob := M4Y_al(2);
 
 P<lm> := PolynomialRing(QQ);
 assert CharacteristicPolynomial(frob) eq lm^3*(lm-2)^2;
@@ -103,7 +110,7 @@ assert A.3*a eq 1/2*a + 3/2*c;
 // Check singular locus
 //
 
-A, gen, frob := M4Y_al();
+A, gens, frob := M4Y_al();
 II := IdealOfSingularPoints(A);
 primII := RadicalDecomposition(II);
 P := Generic(II);
@@ -122,7 +129,7 @@ assert forall{ J : J in bad | P.6-2 in J};
 // Idempotents
 
 // --------------------------------
-A, gen, frob := M4Y_al();
+A, gens, frob := M4Y_al();
 F<al> := BaseRing(A);
 bt := (1-al^2)/2;
 
@@ -456,6 +463,8 @@ B1, inc1 := sub<B|B.1, B.3>;
 B2, inc2 := sub<B|B.2, B.4>;
 so, id1 := HasOne(B1);
 so, id2 := HasOne(B2);
+
+assert so;
 
 // NB we need to be able to divide by al+1 to get both identities
 assert id1@inc1 eq 1/(al+1)*(B.1+B.3+B.5);

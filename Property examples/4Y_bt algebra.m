@@ -17,8 +17,16 @@ ZZ := Integers();
 // 4Y(1/2, bt)
 //
 // =========================================================
-A, gen, frob := M4Y_bt();
+A, gens, frob := M4Y_bt();
 F<bt> := BaseRing(A);
+al := 1/2;
+
+// Confirm the algebra is indeed a 2-generated Monster type algebra
+
+assert sub<A | gens> eq A;
+assert HasMonsterFusionLaw(gens[1]: fusion_values:=[al, bt]);
+assert HasMonsterFusionLaw(gens[2]: fusion_values:=[al, bt]);
+assert IsFrobeniusForm(frob, A);
 
 u01 := (4*bt-1)*A.1+A.3 -2*(4*bt-1)*A.5;
 u02 := A.2+A.4-4*bt*A.5;
@@ -70,7 +78,7 @@ assert Determinant(frob) eq 2^8*bt^2*(2*bt-1)^6;
 
 //------------------------------
 
-A, gen, frob := M4Y_bt();
+A, gens, frob := M4Y_bt();
 F<bt> := BaseRing(A);
 
 t1 := MiyamotoInvolution(A.1);

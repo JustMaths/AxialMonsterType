@@ -18,7 +18,7 @@ QQ := Rationals();
 //
 // ===========================================================================================================
 
-A , gen, frob := M6A();
+A , gens, frob := M6A();
 F<al> := BaseRing(A);
 
 bt := -al^2/4/(2*al-1);
@@ -26,6 +26,12 @@ bt := -al^2/4/(2*al-1);
 assert bt-1 eq (-al^2-8*al+4)/(4*(2*al-1));
 assert al-bt eq al*(9*al-4)/(4*(2*al-1));
 
+// Confirm the algebra is indeed a 2-generated Monster type algebra
+
+assert sub<A | gens> eq A;
+assert HasMonsterFusionLaw(gens[1]: fusion_values:=[al, bt]);
+assert HasMonsterFusionLaw(gens[2]: fusion_values:=[al, bt]);
+assert IsFrobeniusForm(frob, A);
 
 // Identity
 so, id := HasOne(A);
@@ -124,7 +130,7 @@ So can split into cases:
 //
 // Case 1
 //
-A, gen, frob:= M6A(2/3);
+A, gens, frob:= M6A(2/3);
 
 P<t> := PolynomialRing(Rationals());
 charpoly := CharacteristicPolynomial(frob);
@@ -163,7 +169,7 @@ assert Dimension(Eigenspace(B.1,-1/3)) eq 2;
 //
 // Case 2
 //
-A, gen, frob:= M6A(4/7);
+A, gens, frob:= M6A(4/7);
 // NB that the characteristic is clearly not 7
 
 // Also not 3, as al = 1 and not 11 as bt = 1
@@ -252,7 +258,7 @@ assert Evaluate(bt, -2+r) eq 1/2;
 // Let \zeta be a square root of 6
 for zt in [r, -r] do
   AL := -2+zt;
-  A, gen, frob := M6A(AL);
+  A, gens, frob := M6A(AL);
 
   assert Dimension(Nullspace(frob)) eq 4;
 
@@ -399,7 +405,7 @@ end for;
 // GF(5) and al = 2/3 = -1 = -2 + zeta, where zt = 1 is a square root of 6 = 1
 //
 //
-A, gen, frob:= M6A(GF(5)!2/3);
+A, gens, frob:= M6A(GF(5)!2/3);
 AL := GF(5)!2/3;
 assert AL eq -1;
 zt := GF(5)!1; // when compared to the -2 \pm \sqrt{6} case
@@ -477,7 +483,7 @@ assert [[ Eltseq(e) : e in r] : r in BasisProducts(BB)] eq [[ Eltseq(e) : e in r
 // Char 5 and al = 2 = 4/7 = -2 -zeta, where zeta = -1 is a sqrt of 6=1
 //
 //
-A, gen, frob := M6A(GF(5)!4/7);
+A, gens, frob := M6A(GF(5)!4/7);
 AL := GF(5)!4/7;
 assert AL eq 2;
 zt := -GF(5)!1; // when compared to the -2 \pm \sqrt{6} case
@@ -570,7 +576,7 @@ assert Evaluate(bt, (1-r)/24) eq (53-5*r)/192;
 assert Evaluate(bt, (1+r)/24) eq (53+5*r)/192;
 
 // Two roots to check
-A, gen, frob := M6A((1+r)/24);
+A, gens, frob := M6A((1+r)/24);
 
 assert Dimension(Nullspace(frob)) eq 1;
 
@@ -633,7 +639,7 @@ assert Dimension(Eigenspace(B.1, (53+5*r)/192)) eq 2;
 
 // ---------------------
 
-A, gen, frob := M6A((1-r)/24);
+A, gens, frob := M6A((1-r)/24);
 
 assert Dimension(Nullspace(frob)) eq 1;
 
@@ -695,7 +701,7 @@ assert Dimension(Eigenspace(B.1, (53-5*r)/192)) eq 2;
 // -----------------------------------------
 load "Find idempotents.m";
 
-A , gen, frob := M6A();
+A , gens, frob := M6A();
 F<al> := BaseRing(A);
 
 I := IdempotentIdeal(A);
@@ -708,9 +714,16 @@ I := IdempotentIdeal(A);
 //
 // ===========================================================================================================
 
-
 A, gens, frob := M6J();
 F<bt> := BaseRing(A);
+al := 2*bt;
+
+// Confirm the algebra is indeed a 2-generated Monster type algebra
+
+assert sub<A | gens> eq A;
+assert HasMonsterFusionLaw(gens[1]: fusion_values:=[al, bt]);
+assert HasMonsterFusionLaw(gens[2]: fusion_values:=[al, bt]);
+assert IsFrobeniusForm(frob, A);
 
 so, id:= HasOne(A);
 assert so;
@@ -731,7 +744,7 @@ assert  InnerProduct(Vector(A.1*t2)*frob, Vector(A.2*t1)) eq bt;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-A, gen, frob := M6J(-1/7);
+A, gens, frob := M6J(-1/7);
 
 // the Radical is 1 dim
 assert Dimension(Nullspace(frob)) eq 1;
@@ -764,7 +777,7 @@ B.2 eq A.2@quo;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-A, gen, frob := M6J(2);
+A, gens, frob := M6J(2);
 // NB char \neq 3
 
 P<lm> := PolynomialRing(Rationals());
@@ -842,7 +855,7 @@ assert A.4*u1 eq 2*u1 -2*u5;
 //----------
 // check when char = 5 and bt = 2 = -1/7
 
-A, gen, frob := M6J(GF(5)!2);
+A, gens, frob := M6J(GF(5)!2);
 
 assert Dimension(Nullspace(frob)) eq 6;
 R := ideal<A| [A!x : x in Basis(Nullspace(frob))]>;
@@ -869,7 +882,16 @@ Assert Dimension(Ann) eq 1;
 //
 // ===========================================================================================================
 
-A, gen, frob := M6Y();
+A, gens, frob := M6Y();
+al := 1/2;
+bt := 2;
+
+// Confirm the algebra is indeed a 2-generated Monster type algebra
+
+assert sub<A | gens> eq A;
+assert HasMonsterFusionLaw(gens[1]: fusion_values:=[al, bt]);
+assert HasMonsterFusionLaw(gens[2]: fusion_values:=[al, bt]);
+assert IsFrobeniusForm(frob, A);
 
 // the Radical is 4 dim
 assert Dimension(Nullspace(frob)) eq 4;
@@ -940,7 +962,7 @@ assert B_5.1 eq A.1@quo;
 load "Find idempotents.m";
 QQ := Rationals();
 
-A, gen, frob := M6Y();
+A, gens, frob := M6Y();
 
 t1 := PermutationMatrix(QQ, [1,4,3,2,5]);
 t2 := PermutationMatrix(QQ, [3,2,1,4,5]);

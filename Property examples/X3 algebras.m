@@ -18,8 +18,15 @@ QQ := Rationals();
 // =========================================================
 
 // Get the algebra, generators and the frobenius form
-A, gen, frob := M3A();
+A, gens, frob := M3A();
 F<al,bt> := BaseRing(A);
+
+// Confirm the algebra is indeed a 2-generated Monster type algebra
+
+assert sub<A | gens> eq A;
+assert HasMonsterFusionLaw(gens[1]: fusion_values:=[al, bt]);
+assert HasMonsterFusionLaw(gens[2]: fusion_values:=[al, bt]);
+assert IsFrobeniusForm(frob, A);
 
 // eigenspaces
 
@@ -57,7 +64,7 @@ NB any pair simutaneously hold if and only if char = 3 and bt = -1.  Then all ho
 */
 
 // First check for when char = 3
-A, gen, frob := M3A(:base_ring:=GF(3));
+A, gens, frob := M3A(:base_ring:=GF(3));
 F<al,bt> := BaseRing(A);
 
 assert Determinant(frob) eq -2*al^2*(bt+1)^5 / (2*al-1)^5;
@@ -94,7 +101,7 @@ assert Dimension(I) eq 3;
 //
 // Now can assume char F \neq 3
 //
-A, gen, frob := M3A();
+A, gens, frob := M3A();
 F<al,bt> := BaseRing(A);
 
 // Let bt = 3al-1
@@ -222,26 +229,25 @@ assert Dimension(ideal<AA | z1-z2, z2-z3>) eq 3;
 // If bt = 1/2, then it is isomorphic to IY3(al, 1/2, -1/2);
 // Can see from Yabe's definition
 
-FF<AL> := FunctionField(Rationals());
-phi := hom<F->FF | [AL,1/2]>;
-
-A := ChangeRing(A, FF, phi);
+// First assume that char F ne 3, al ne -1
+F<al> := FunctionField(QQ);
+A, gens, frob := M3A(al, 1/2);
 
 e := 2/3*(2*A.1-A.2-A.3);
 f := 2/3*(-A.1+2*A.2-A.3);
-z1 := -2/3*(A.1+A.2+A.3 + 4/AL*A.4);
-z2 := 2/3*(A.1+A.2+A.3 + 4/(AL+1)*A.4);
+z1 := -2/3*(A.1+A.2+A.3 + 4/al*A.4);
+z2 := 2/3*(A.1+A.2+A.3 + 4/(al+1)*A.4);
 
 assert z1^2 eq z1;
 assert z2^2 eq z2;
 assert z1*z2 eq 0;
-assert e*z1 eq AL*e;
-assert f*z1 eq AL*f;
-assert e*z2 eq (1-AL)*e;
-assert f*z2 eq (1-AL)*f;
+assert e*z1 eq al*e;
+assert f*z1 eq al*f;
+assert e*z2 eq (1-al)*e;
+assert f*z2 eq (1-al)*f;
 
 // from split spin factor paper
-z := AL*(AL-2)*z1 + (AL-1)*(AL+1)*z2;
+z := al*(al-2)*z1 + (al-1)*(al+1)*z2;
 
 assert e^2 eq - z;
 assert f^2 eq - z;
@@ -249,7 +255,7 @@ assert e*f eq -(-1/2)*z;
 
 // so it is isomorphic to the split spin factor algebra with mu = -1/2
 
-// if AL = -1;
+// if char F ne 3 and al = -1;
 
 A := M3A(-1,1/2);
 e := 2/3*(2*A.1-A.2-A.3);
@@ -272,7 +278,22 @@ assert e^2 eq - z;
 assert f^2 eq - z;
 assert e*f eq -(-1/2)*z;
 
-// In Char 3, bt = 1/2 = -1 and 3A has no identity.  So it can't be isomorphic to IY_3(al,1/2,-1/2) as this does have an identity if al \neq -1.  Can't have al = -1 = 1/2 = bt. So not isomorphic if al = -1 either.
+// If char = 3, then IY_3(al, 1/2, -1/2) = IY_3(al, -1, 1) and this has a different basis, no identity and an annihilator.
+
+F<al> := FunctionField(GF(3));
+A, gens, frob := M3A(al, F!1/2);
+
+z := 2*A![1,1,1,0] + 1/al*A.4;
+n := 2/al*A.4;
+
+assert A.1*A.2 eq 1/2*(A.1+A.2) + (al-1/2)*z + n;
+assert z^2 eq 0;
+assert A.1*z eq al*z;
+assert A.2*z eq al*z;
+Ann := Annihilator(A);
+assert Dimension(Ann) eq 1;
+assert n in Ann;
+
 
 
 // ---------------------------------------------
@@ -280,13 +301,573 @@ assert e*f eq -(-1/2)*z;
 // Look at the idempotents
 
 // ---------------------------------------------
-A, gen, frob := M3A();
+A, gens, frob := M3A();
 F<al,bt> := BaseRing(A);
 
 t1 := MiyamotoInvolution(A.1);
 t2 := MiyamotoInvolution(A.2);
 G := sub<GL(4,F) | t1,t2>;
 assert Order(G) eq 6; // Needed to ensure Magma knows the order of the group over FCl and so to be able to take orbits
+
+// If characteristic is not three, then change basis
+bas := [ 2*A.1-A.2-A.3, 2*A.2-A.1-A.3, A.1+A.2+A.3, A.4];
+AA := ChangeBasis(A, bas);
+I := IdempotentIdeal(AA);
+
+P<lm0, lm1, mu, nu> := Generic(I);
+
+p := 3*al^2 + 3*al*bt - bt -1;
+pt := -al*p/4/(2*al - 1);
+q := 3*al+bt+1;
+
+P0 := (1-2*bt)*lm0 + 2*(2*bt-1)*lm1 + 2*(bt+1)*mu + 2*pt*nu -1;
+P1 := (1-2*bt)*lm1 + 2*(2*bt-1)*lm0 + 2*(bt+1)*mu + 2*pt*nu -1;
+Q := q*mu + 2*pt*nu -1;
+
+assert Basis(I) eq [ lm0*P0, lm1*P1, (3-q)*(lm0^2-lm0*lm1+lm1^2) + mu*Q,
+                     -6*(lm0^2 - lm0*lm1 + lm1^2 -mu^2) + nu*(pt*nu-1)];
+
+// Assume we are in the case where lm1 = 0, lm0 \neq 0
+
+P0_0 := Evaluate(P0, [lm0, 0, mu, nu]);
+assert P0_0 eq -(2*bt-1)*lm0 + 2*(bt+1)*mu +2*pt*nu - 1;
+
+assert Evaluate(Basis(I)[3], [ lm0, 0, mu, nu]) eq (3-q)*lm0^2 + mu*Q;
+
+// -----------------------
+//
+// If pt ne 0;
+
+// Eliminating nu, we get
+E2 := Evaluate(Basis(I)[3], [ lm0, 0, mu, nu]) - mu*P0_0;
+assert E2 eq (3-q)*lm0^2 + (2*bt-1)*lm0*mu + (q-2*(bt+1))*mu^2;
+
+// We use P0_0 to eliminate nu from Basis(I)[4], to get:
+E3 := -6*(lm0^2-mu^2) + 1/4/pt*( (2*bt-1)^2*lm0^2 - 4*(2*bt-1)*(bt+1)*lm0*mu + 4*(bt+1)^2*mu^2 -1);
+
+assert E3 eq ( (2*bt-1)^2/4/pt -6 )*lm0^2 -(2*bt-1)*(bt+1)/pt*lm0*mu + ( (bt+1)^2/pt + 6 )*mu^2 - 1/4/pt;
+
+II := ideal<P | lm1, P0_0, Basis(I)[3], Basis(I)[4]>;
+assert E3 in II;
+
+// Now note that E2 and E3 are polynomials just in lm0 and mu
+// We map these into a smaller polynomial ring
+PP := PolynomialRing(F, 2);
+phi := hom< P -> PP | [ PP.1, 0, PP.2, 0]>;
+
+// Clear the denominator of E3 by multiplying by al*p and map into into a poly ring over Z[al, bt]
+E3 := al*p*E3;
+
+FZ := RingOfIntegers(F); // Z[al,bt]
+PPZ<s, t> := PolynomialRing(FZ, 2);
+
+E2Z := PPZ!(E2@phi);
+E3Z := PPZ!(E3@phi);
+
+// Calculate the resultant
+Res := Resultant(E2Z, E3Z, 1);
+
+assert Res eq -FZ!((2*al-1)^2)*(3*t-1)*(3*t+1)*( FZ!(3^2*(2*al-1)*(3*al-bt-1)*(2*al*bt-al-bt-1))*t^2 + FZ!(q-3)^2 );
+
+// So possible roots are: 1/3, -1/3, \pm (q-3)/3/(2*al-1)*r
+// where r is a root such that r^2 = -(2*al-1)/(3*al-bt-1)/(2*al*bt-al-bt-1)
+
+// When can these roots coincide?
+// Only when -9*(q-3)^2*(2*al-1) eq 9*(2*al-1)^2*(3*al-bt-1)*(2*al*bt-al-bt-1)
+// iff -(q-3)^2 eq (2*al-1)*(3*al-bt-1)*(2*al*bt-al-bt-1)
+coincide_poly := 6*al^3 - 8*al^2 + 8*al - 3 - 2*al*(al-1)*bt;
+assert (q-3)^2 + (2*al-1)*(3*al-bt-1)*(2*al*bt-al-bt-1) eq (2*bt - 1)*coincide_poly;
+
+// bt ne 1/2, so only option is when coincide_poly is 0.  ie if
+bt0 := (6*al^3 - 8*al^2 + 8*al - 3)/2/al/(al-1);
+
+// Note that then r is in the field and we do not need to take a field extension
+r0 := 2*al*(al-1)/3/(2*al^2-2*al+1);
+assert Evaluate(-(2*al-1)/(3*al-bt-1)/(2*al*bt-al-bt-1), [al, bt0]) eq r0^2;
+// This will cause extra solutions below which look spurious.
+
+// Now check the roots:
+
+// mu = 1/3
+assert Evaluate(E2@phi, [PP.1, 1/3]) eq (PP.1 - 1/3)*( (3-q)*PP.1 -(3*al-bt-1)/3);
+
+c1 := -(18*al^3 + 18*al^2*bt + 8*al*bt^2 - 14*al*bt - 4*al - 4*bt^2 + 4*bt - 1);
+c2 := (18*al^3 + 18*al^2*bt - 8*al*bt^2 - 22*al*bt + 4*al + 4*bt^2 + 8*bt - 5)/3;
+
+assert Evaluate(E3@phi, [PP.1, 1/3]) eq (PP.1 - 1/3)*( c1*PP.1 - c2 );
+
+// So lm0 = 1/3 is always a root.
+// check if the other can be a factor as well.  This happens iff (3*al-bt-1)/3/(3-q) eq c2/c1 and so
+// 3*(3-q)*c2 eq (3*al-bt-1)*c1
+
+assert 3*(3-q)*c2 - (3*al-bt-1)*c1 eq -3*(2*bt-1)*coincide_poly;
+
+// char ne 3 and bt ne 1/2
+
+// when coincide_poly = 0, then bt = bt0, r = r03
+// deal with this case below
+
+
+// mu = -1/3
+assert Evaluate(E2@phi, [PP.1, -1/3]) eq (PP.1 + 1/3)*( (3-q)*PP.1 + (3*al-bt-1)/3);
+assert Evaluate(E3@phi, [PP.1, -1/3]) eq (PP.1 + 1/3)*( c1*PP.1 + c2 );
+
+// So lm0 = 1/3 is always a root.
+// check if the other can be a factor as well.  This happens iff -(3*al-bt-1)/3/(3-q) eq -c2/c1 and so
+// 3*(3-q)*c2 eq (3*al-bt-1)*c1
+// Same as the above
+
+// Deal with the coincide_poly = 0 case below
+
+// Roots of the quadratic
+
+FCl := AlgebraicClosure(F);
+r := Sqrt(FCl!-(2*al-1)/(3*al-bt-1)/(2*al*bt-al-bt-1));
+
+mu_0 := (3-q)/3/(2*al-1)*r;
+
+// mu = mu_0
+PP_FCl := ChangeRing(PP, FCl);
+
+assert Evaluate(PP_FCl!(E2@phi), [PP_FCl.1, mu_0]) eq (3-q)*(PP_FCl.1 - (3*al-bt-1)/3/(2*al-1)*r)*(PP_FCl.1 - (3-q)/3/(2*al-1)*r);
+
+c3 := (54*al^4 + 36*al^3*bt - 18*al^3 + 54*al^2*bt^2 - 36*al^2*bt - 36*al^2 + 8*al*bt^3 - 54*al*bt^2 - 6*al*bt + 29*al - 4*bt^3 + 12*bt^2 + 9*bt - 7)/3/(2*al-1);
+
+assert Evaluate(PP_FCl!(E3@phi), [PP_FCl.1, mu_0]) eq (PP_FCl.1 - (3*al-bt-1)/3/(2*al-1)*r)*( c1*PP_FCl.1 - c3*r);
+
+// So lm0 = (3*al-bt-1)/3/(2*al-1)*r is a common root
+
+// The other is a root iff (3-q)/3/(2*al-1)*r = c3*r/c1
+// iff (3-q)*c1 = 3*(2*al-1)*c2
+
+assert (3-q)*c1 - 3*(2*al-1)*c3 eq 3*(2*bt-1)*coincide_poly;
+
+// Note that if coincide_poly = 0, then the extra common root is -1/3 and mu_0 eq -1/3 too
+assert Evaluate(c3/c1*r0, [al, bt0]) eq -1/3;
+assert Evaluate((3-q)/3/(2*al-1)*r0, [al, bt0]) eq -1/3;
+// This corresponds to the solution found above
+
+// Now check for -mu_0, given by choosing -r
+// switch r for -r in the above and get exactly the same
+
+assert Evaluate(PP_FCl!(E2@phi), [PP_FCl.1, -mu_0]) eq (3-q)*(PP_FCl.1 - (3*al-bt-1)/3/(2*al-1)*(-r))*(PP_FCl.1 - (3-q)/3/(2*al-1)*(-r));
+assert Evaluate(PP_FCl!(E3@phi), [PP_FCl.1, -mu_0]) eq (PP_FCl.1 - (3*al-bt-1)/3/(2*al-1)*(-r))*( c1*PP_FCl.1 - c3*(-r));
+
+// So same behaviour with a second root when coincide_poly = 0 occurs.
+// Here -mu_0 = 1/3 and the extra root is also 1/3
+
+// Solve for nu
+nu_0 := Roots(UnivariatePolynomial(Evaluate(P0, [1/3, 0, 1/3, nu])))[1,1];
+
+assert nu_0 eq 0;
+// This gives A.1
+
+nu_0 := Roots(UnivariatePolynomial(Evaluate(P0, [-1/3, 0, -1/3, nu])))[1,1];
+
+assert nu_0 eq 1/pt;
+// This gives id-A.1
+
+P_FCl := ChangeRing(P, FCl);
+lm_0 := (3*al-bt-1)/3/(2*al-1)*r;
+mu_0 := (3-q)/3/(2*al-1)*r;
+nu_0 := Roots(UnivariatePolynomial(Evaluate(P_FCl!P0, [lm_0, 0, mu_0, P_FCl.4])))[1,1];
+
+assert nu_0 eq 1/2/pt - 2*(4*al*bt+al-bt-1)/al/p*r;
+
+// Define y
+
+ACl := ChangeRing(A, FCl);
+y := (bt-al)/(2*al-1)*r*ACl.1 + r*(ACl.2+ACl.3) + 2*(4*al*bt+al-bt-1)/al/p*r*ACl.4;
+
+assert lm_0*ACl!Eltseq(bas[1]) + mu_0*ACl!Eltseq(bas[3]) + (nu_0-1/2/pt)*ACl!Eltseq(bas[4]) eq -y;
+// This gives id/2 - y
+
+lm_0 := (3*al-bt-1)/3/(2*al-1)*(-r);
+mu_0 := (3-q)/3/(2*al-1)*(-r);
+nu_0 := Roots(UnivariatePolynomial(Evaluate(P0, [lm_0, 0, mu_0, P_FCl.4])))[1,1];
+
+assert nu_0 eq 1/2/pt - 2*(4*al*bt+al-bt-1)/al/p*(-r);
+
+assert lm_0*ACl!Eltseq(bas[1]) + mu_0*ACl!Eltseq(bas[3]) + (nu_0-1/2/pt)*ACl!Eltseq(bas[4]) eq y;
+// This gives id/2 + y
+
+
+
+
+
+// Check the orbits and lengths
+
+frobCl := ChangeRing(frob, FCl);
+
+GCl := ChangeRing(G, FCl);  // Still remembers the order from above
+
+assert #FindAllIdempotents(ACl) eq 16;
+Simplify(FCl);
+Prune(FCl);
+
+// 0 is always an idempotent
+// define the id
+so, id := HasOne(ACl);
+assert so;
+assert id eq 1/pt*ACl.4;
+
+x := r*ACl![1,1,1,0] + 2*(2*al-1)*(3*al+bt+1)/al/p*r*ACl.4;
+idems := [ACl!0, id, ACl.1, id-ACl.1, id/2+x, id/2-x, id/2+y, id/2-y];
+
+orbs := {@ {@ ACl!u : u in Orbit(GCl, Vector(v))@} : v in idems @};  // Need to have found the order for Orbit to work
+Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
+
+assert #(&join orbs) eq 16;
+assert #orbs eq 8;
+assert {* #o : o in orbs *} eq {* 1^^4, 3^^4 *};
+
+// We have all the orbit representatives for the idempotents
+assert { i where so := exists(i){i : i in [1..#orbs] | e in orbs[i]} : e in idems} eq {1..#orbs};
+
+// The identity
+len_id := (9*al + bt - 5)/(3*al^2 + 3*al*bt - bt - 1);
+assert InnerProduct(id*frobCl, id) eq len_id;
+
+// 1/2 \pm x
+assert IsIdempotent(id/2 +x);
+assert InnerProduct((id/2 +x)*frobCl, id/2 +x) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (9*al + bt - 5) - (3*al-bt-1)^2*r);
+
+// There are 3 eigenvalues, 1, 0 and 
+assert Dimension(Eigenspace(id/2 +x, (-3*al + bt + 1)/2*r + 1/2)) eq 2;
+// But it is not Jordan type a in general as not graded.  Have a*a = {1,0,a}
+evals, espace, FL := IdentifyFusionLaw(id/2 +x);
+assert Order(Grading(FL)) eq 1;
+
+// Becomes Jordan type iff bt = 1/2
+// But when bt=1/2, A \cong IY_3(al,1/2,-1/2) - all idempotents are classified here.
+// This algebra has 3 axes, but is isomorphic as an algebra to IY_3(al,1/2,1/2), which has 6 axes.
+assert Vector(ACl.1-ACl.2) in espace[3] and Vector(ACl.2-ACl.3) in espace[3];
+// This gives an automorphism which swaps our known orbit 3 axes to a second set
+
+// the fourth idempotent fixed by the Miyamoto group is id/2 - x
+assert IsIdempotent(id/2-x);
+
+assert InnerProduct((id/2-x)*frobCl,id/2-x) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (9*al+bt-5) + (3*al - bt - 1)^2*r);
+// Fusion law comes from x
+// Now consider the idempotents in the orbits orbits of size 3
+// clearly, one orbit is the axes
+// another is 1 - axes
+
+assert IsIdempotent(ACl.1) and IsIdempotent(id-ACl.1);
+
+assert InnerProduct((id-ACl.1)*frobCl, id -ACl.1) eq (-3*al^2 - 3*al*bt + 9*al + 2*bt - 4)/(3*al^2 + 3*al*bt - bt - 1);
+
+// 1/2 \pm y
+// NB that id-y is equivalent to picking the other root -r
+assert IsIdempotent(id/2 +y);
+
+assert InnerProduct((id/2 +y)*frobCl, id/2 +y) eq 1/2/(3*al^2 + 3*al*bt - bt - 1)*( (9*al+bt-5) + (3*al - bt - 1)^2*r);
+assert InnerProduct((id/2 +y)*frobCl, id/2 +y) eq InnerProduct((id/2-x)*frobCl,id/2-x);
+
+evals, espaces, FL := IdentifyFusionLaw(id/2+y);
+lm := (3*al - bt - 1)/2*r + 1/2;
+mu := -(2*bt-1)*(3*al-bt-1)/(4*al - 2)*r + 1/2;
+assert { e[1] : e in evals} eq {1,0,lm, mu};
+assert HasAlmostMonsterFusionLaw(id/2+y:fusion_values:=[lm,mu]);
+
+assert Order(Grading(FL)) eq 2;
+assert (id/2+y)*(ACl.2-ACl.3) eq mu*(ACl.2-ACl.3);
+// Miyamoto involution is the same
+
+// Almost Monster type (lm,mu): lm*lm = {1,0,a}
+u_lm := (5*al + bt - 3)*ACl.1 + (2*al-1)*(ACl.2+ACl.3) + 4*(2*al-1)/al*ACl.4;
+assert (id/2+y)*u_lm eq lm*u_lm;
+
+u_0 := al*(al-bt)*(3*al^2 + 3*al*bt - bt - 1)*ACl.1 - al*(2*al-1)*(3*al^2 + 3*al*bt - bt - 1)*(ACl.2+ACl.3)
+          + 2*(2*al - 1)*( (3*al - bt - 1)*(2*al*bt - al - bt - 1)*r - (4*al*bt + al - bt - 1) )*ACl.4;
+assert (id/2+y)*u_0 eq ACl!0;
+
+// Becomes Monster type iff bt = 1/2
+V := VectorSpaceWithBasis([ Vector(v) : v in [id/2+y,u_0,u_lm,ACl.2-ACl.3]]);
+coord := Coordinates(V, Vector(u_lm^2));
+assert coord[4] eq 0;
+assert coord[3] eq -(2*al-1)*(2*bt-1);
+
+
+// both x and A.4 are fixed by the Miyamoto group, so y in in an orbit of size 3
+
+assert IsIdempotent(id/2-y);
+assert InnerProduct((id/2 -y)*frobCl, id/2 -y) eq InnerProduct((id/2+x)*frobCl,id/2+x);
+
+// Check for characteristic polynomial matching Monster type
+
+poss := CheckForMatchingCharactisticPoly(ACl.1, orbs);
+
+assert #poss eq 3;
+
+// One is the case of id - axis
+assert poss[1,1] eq id-ACl.1;
+
+// The other two are 1/2id \pm y
+assert { poss[2,1], poss[3,1]} eq { id/2+y, id/2-y};
+
+// One of id/2 \pm y has the same spectrum as an axis, if and only if y has the same spectrum as A.1-id/2.
+// This is 1/2, -1/2, al-1/2, bt-1/2
+
+s := 3*al-bt-1;
+t := 2*al*bt-al-bt-1;
+
+assert r^2 eq -(2*al-1)/s/t;
+
+P<x> := PolynomialRing(FCl);
+
+assert CharacteristicPolynomial(y) eq (x-1/2)*(x+1/2)*(x-s/2*r)*(x+(2*bt-1)*s/2/(2*al-1)*r);
+
+// So { s/2*r, -(2*bt-1)*s/2/(2*al-1)*r } = { al-1/2, bt-1/2 }
+
+// If s/2*r eq al-1/2, then
+// r eq (2*al-1)/s
+// So -(2*al-1)/s/t = r^2 = (2*al-1)^2/s^2
+// rearranging we get the following to be 0
+assert (2*al-1)*t + s eq 2*(2*bt-1)*al*(al-1);
+// Since bt ne 1/2, al ne 0, 1, this is a contradiction
+
+/*
+So we must have
+
+s/2*r = bt-1/2   and    -(2*bt-1)*s/2/(2*al-1)*r = al-1/2
+
+which is
+
+s*r = 2*bt-1    and -(2*bt-1)/(2*al-1)*s*r = 2*al-1
+
+Substituting sr into the second equation, we get
+
+(2*bt-1)^2 = -(2*al-1)^2
+
+From the first equation above, r = (2*bt-1)/s and so
+
+-(2*al-1)/s/t = r^2 = (2*bt-1)^2/s^2 = -(2*al-1)^2/s^2
+
+rearranging, we get the following to be 0
+*/
+assert s - (2*al-1)*t eq -2*(2*al^2*bt - al^2 - 2*al*bt - 2*al + bt + 1);
+
+// So we get that bt = (al^2 + 2*al - 1)/(2*al^2 -2*al +1)
+assert Evaluate(2*al^2*bt - al^2 - 2*al*bt - 2*al + bt + 1, [al, (al^2 + 2*al - 1)/(2*al^2 -2*al +1)]) eq 0;
+
+assert Evaluate( 2*bt-1, [al, (al^2 + 2*al - 1)/(2*al^2 -2*al +1)]) eq 3*(2*al-1)/(2*al^2-2*al+1);
+
+// But (2*bt-1)^2 = -(2*al-1)^2
+// So 3^2*(2*al-1)^2/(2*al^2-2*al+1)^2 = -(2*al-1)^2
+// Hence 9/(2*al^2-2*al+1)^2 = -1
+// So we get the following to be 0
+assert (2*al^2-2*al+1)^2 + 9 eq 2*(2*al^4 - 4*al^3 + 4*al^2 - 2*al + 5);
+
+assert Evaluate( (2*bt-1)^2, [al, (al^2 + 2*al - 1)/(2*al^2 -2*al +1)]) eq 3^2*(2*al-1)^2/(2*al^2-2*al+1)^2;
+
+
+
+I := poss[2,4];
+P := Generic(I);
+
+assert poss[2,3] eq [* <r, P.1>, <al, P.2>, <bt, P.3> *];
+
+// al ne 1/2 and we assume in this case that bt ne 1/2 (as otherwise 3A \cong IY3)
+
+
+
+
+// -----------------------
+//
+// If pt = 0
+// Complete case when lm0 \neq 0 and lm1 = 0
+
+// If p = 0, then 
+assert p eq (3*al-1)*bt + 3*al^2-1;
+// so bt = (1-3al^2)/(3*al-1)
+
+F<al> := FunctionField(Integers());
+bt := (1-3*al^2)/(3*al-1);
+
+A, gens, frob := M3A(al, bt);
+
+bas := [ 2*A.1-A.2-A.3, 2*A.2-A.1-A.3, A.1+A.2+A.3, A.4];
+AA := ChangeBasis(A, bas);
+I := IdempotentIdeal(AA);
+
+P<lm0, lm1, mu, nu> := Generic(I);
+
+p := 3*al^2 + 3*al*bt - bt -1;
+pt := -al*p/4/(2*al - 1);
+q := 3*al+bt+1;
+
+P0 := (1-2*bt)*lm0 + 2*(2*bt-1)*lm1 + 2*(bt+1)*mu + 2*pt*nu -1;
+P1 := (1-2*bt)*lm1 + 2*(2*bt-1)*lm0 + 2*(bt+1)*mu + 2*pt*nu -1;
+Q := q*mu + 2*pt*nu -1;
+
+assert Basis(I) eq [ lm0*P0, lm1*P1, (3-q)*(lm0^2-lm0*lm1+lm1^2) + mu*Q,
+                     -6*(lm0^2 - lm0*lm1 + lm1^2 -mu^2) + nu*(pt*nu-1)];
+
+// Assume we are in the case where lm1 = 0, lm0 \neq 0
+
+P0_0 := Evaluate(P0, [lm0, 0, mu, nu]);
+assert P0_0 eq -(2*bt-1)*lm0 + 2*(bt+1)*mu - 1;
+
+// Equation 2
+E2 := Evaluate(Basis(I)[3], [lm0, 0, mu, nu]);
+assert E2 eq (3-q)*lm0^2 + q*mu^2 -mu;
+
+// Use P0_0 to substitue for lm0 to get
+
+E2 := (3-q)*1/(2*bt-1)^2*( 2*(bt+1)*mu -1)^2 + q*mu^2 -mu;
+assert (2*bt-1)^2*E2 eq 3*(2*al-1)/(3*al-1)*( 3*mu - 1 )*( 6*al^2*mu - (1-al) );
+
+rt := (3*al-1)/6/al^2;
+
+xp := rt*(A.1+A.2+A.3) + 6*rt^2*A.4;
+yp := (1+3*al)/(6*al^2)*A.1 - rt*(A.2+A.3) - (al+1)/al^2*rt*A.4;
+
+assert 1/3/al*(2*A.1-A.2-A.3) + (1-al)/6/al^2*(A.1+A.2+A.3) -(3*al-1)*(al+1)/6/al^4*A.4 eq yp;
+
+assert IsIdempotent(xp);
+assert InnerProduct(xp*frob, xp) eq (3*al-1)/4/al^3;
+evals, espace, FL := IdentifyFusionLaw(xp);
+assert Order(Grading(FL)) eq 1; // not graded
+assert evals eq { <1,1>, <0,1>, < (1-al)/2/al, 2>}; // three eigenvalues
+
+assert IsIdempotent(yp);
+assert InnerProduct(yp*frob, yp) eq (3*al-1)/4/al^3;
+evals, espace, FL := IdentifyFusionLaw(yp);
+Gr, gr := Grading(FL);
+assert Order(Gr) eq 2;
+assert MiyamotoInvolution(yp) eq MiyamotoInvolution(A.1);
+
+// -------------------------
+//
+// characteristic 3
+
+A, gens, frob := M3A(:base_ring:=GF(3));
+F<al,bt> := BaseRing(A);
+
+idems := FindAllIdempotents(A);
+
+t1 := MiyamotoInvolution(A.1);
+t2 := MiyamotoInvolution(A.2);
+G := sub<GL(4,F) | t1,t2>;
+
+orbs := {@ {@ A!u : u in Orbit(G, Vector(v))@} : v in idems @};
+Sort(~orbs, func<x,y|#x-#y>); // sort smallest first
+
+assert #orbs eq 8;
+assert {* #o : o in orbs *} eq {* 1^^4, 3^^4 *};
+
+// In char 3, we have
+p := 3*al^2 + 3*al*bt - bt -1;
+assert p eq 2*(bt+1);
+// so this is non-zero iff bt \neq -1
+// but -1 = 1/2 and we assume that bt \neq 1/2
+
+// From above, think about r^2
+// As 2al = -al in char 3, we have a factorisation:
+assert (2*al-1)*(bt+1) eq (2*al*bt - al - bt - 1);
+
+// So r^2 now is 1/(bt+1)^2
+assert -(2*al-1)/(3*al-bt-1)/(2*al*bt-al-bt-1) eq 1/(bt+1)^2;
+
+// idempotents in an orbit of size 1
+// 0 is always an idempotent
+
+// has an identity iff bt \neq -1
+so, id := HasOne(A);
+assert so;
+assert id eq 2*(al+1)/(al*(bt+1))*A.4;
+
+// since r = +/- 1/(bt+1), this is the same as the x above.
+x := 1/(bt+1)*(A.1+A.2+A.3) + 2*(2*al-1)/al/p*A.4;
+assert IsIdempotent(id/2+x);
+assert {e[1] : e in Eigenvalues(id/2+ x)} eq {0,1};
+assert not IsSemisimple(id/2 + x);
+
+_,_,S := JordanForm(AdjointMatrix(id/2 + x));
+assert exists{s : s in S | s[2] eq 2};
+// So the adjoint has a jordan block of size 2, so it is not semisimple
+
+// other idempotent is 1-x, also not semisimple
+assert IsIdempotent(id/2-x);
+assert not IsSemisimple(id/2-x);
+
+// idempotents in an orbit of size 3
+assert {@ A.i : i in [1..3] @} in orbs;
+assert {@ id - A.i : i in [1..3] @} in orbs;
+
+// y from above now becomes the following in char 3
+
+y := 1/(bt+1)*( (al-bt)/(al+1)*A.1 + A.2 + A.3 + 2*(4*al*bt+al-bt-1)/al/p*A.4);
+
+assert exists(o1){o : o in orbs | id/2 + y in o}; // so it is an idempotent
+// y is not semisimple
+assert not IsSemisimple(id/2+y);
+
+assert id/2 - y notin o1;
+assert exists(o1_pair){o : o in orbs | id/2-y in o};
+
+poss := FindMatchingIdempotents(A.1, orbs);
+assert #poss eq 1;
+
+// Again we have the possibility that id-A.1 as above
+
+// this is for id - a_i
+p := CharacteristicPolynomial(id-A.1) - CharacteristicPolynomial(A.1);
+P<t> := Parent(p);
+
+assert p eq (al+bt-1)*t*(2*t^2 +1);
+// so only possibility again is that bt = 1-al
+// analysis above did not depend on char not 3
+FF<Al> := FunctionField(GF(3));
+Bt := 1-Al;
+A, gens, frob := M3A(Al, Bt);
+
+so, id := HasOne(A);
+assert so;
+assert HasMonsterFusionLaw(id-A.1:fusion_values:=[Al,Bt]);
+t1_bt := MiyamotoInvolution(A.1, Bt);
+t1_al := MiyamotoInvolution(A.1, Al);
+assert MiyamotoInvolution(id-A.1, Bt) eq t1_al;
+t2_bt := MiyamotoInvolution(A.2, Bt);
+t2_al := MiyamotoInvolution(A.2, Al);
+assert MiyamotoInvolution(id-A.2, Bt) eq t2_al;
+
+G := sub<GL(4,FF) | t1_bt, t1_al, t2_bt, t2_al>;
+assert GroupName(G) eq "S4";
+
+
+//-----------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Check for any odd values of al,bt giving more idempotents
@@ -438,7 +1019,7 @@ Bt := 1-Al;
 // NB we can't be in the case with no identity
 assert 3*Al^2 + 3*Al*Bt -Bt-1 eq 2*(2*Al-1);
 
-A, gen, frob := M3A(Al, Bt);
+A, gens, frob := M3A(Al, Bt);
 
 so, id := HasOne(A);
 assert so;
@@ -521,7 +1102,7 @@ We have three exceptional situations to check:
 
 // Look at characteristic 3
 
-A, gen, frob := M3A(:base_ring:=GF(3));
+A, gens, frob := M3A(:base_ring:=GF(3));
 F<al,bt> := BaseRing(A);
 
 idems := FindAllIdempotents(A);
@@ -596,7 +1177,7 @@ assert p eq (al+bt-1)*t*(2*t^2 +1);
 // analysis above did not depend on char not 3
 FF<Al> := FunctionField(GF(3));
 Bt := 1-Al;
-A, gen, frob := M3A(Al, Bt);
+A, gens, frob := M3A(Al, Bt);
 
 so, id := HasOne(A);
 assert so;
@@ -617,7 +1198,7 @@ assert GroupName(G) eq "S4";
 // Saw above that then al \neq 1/3 and so
 // bt := (1-3*al^2)/(3al-1)
 
-A, gen, frob := M3A();
+A, gens, frob := M3A();
 F<al,bt> := BaseRing(A);
 
 FF<Al> := FunctionField(QQ);
@@ -706,7 +1287,7 @@ assert Evaluate(Bt,-1) eq 1/2;
 // Here the common al-eigenvalue is a nilpotent element
 // This is the only nilpotent element up to scaling
 
-A, gen, frob := M3A();
+A, gens, frob := M3A();
 F<al,bt> := BaseRing(A);
 
 FF<Al> := FunctionField(QQ);
@@ -752,7 +1333,7 @@ assert p eq (Al+Bt-1)*t*(2*t^2 -3*t +1);
 // since al \neq 1/2 can rearrange to get
 // bt = (al+1)/(2*al-1);
 
-A, gen, frob := M3A();
+A, gens, frob := M3A();
 F<al,bt> := BaseRing(A);
 
 FF<Al> := FunctionField(QQ);

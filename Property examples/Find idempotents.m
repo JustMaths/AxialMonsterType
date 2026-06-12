@@ -131,10 +131,215 @@ function FindAllIdempotentsSubspace(A, U)
   
   return idems;
 end function;
+
+
+function FCl_Indicator(r)
+  FCl := Parent(r);
+  Aff := AffineAlgebra(FCl);
+  F := BaseField(FCl);
+  FF := FunctionField(F);
   
+  mons := Monomials(Aff!r);
   
+  rk := Rank(FCl);
+  ind := [FCl | ];
+  for i in [1..rk] do
+    phi := hom<Aff -> FF | [ j eq i select FF.1 else FF!1 : j in [1..rk]]>;
+    
+    inds := [ FCl!(Aff.i) : m in mons | m@phi notin F]; // Numbering is different in Aff to FCl
+    
+    ind cat:= inds;
+  end for;
+  
+  return Sort(IndexedSet(ind));
+end function;
+
+
+
+// Check characteristic polynomials
+CheckForMatchingCharactisticPoly := function(x, LL);
+  n := Degree(x);
+  char_x := CharacteristicPolynomial(AdjointMatrix(x)); // Seems to be a bug in Char poly??
+  assert Coefficient(char_x, n) eq 1;
+  
+  if not Universe(LL) cmpeq Parent(x) then
+    // we have been passed a set of orbits
+    assert Universe(LL[1]) cmpeq Parent(x);
+    L := [ o[1] : o in LL | x notin o and 0 notin o];
+  else
+    L := [ y : y in LL | y ne x and y ne 0];
+  end if;
+  
+  // First we quickly rule out some options
+  // The 1-eigenspace must be 1-dimensional
+  L := [ l : l in L | Dimension(Eigenspace(l, 1)) eq 1];
+  
+  // Finding eigenvalues seems expensive, otherwise I would test to see if there were three or less
+  
+  char_L := [ CharacteristicPolynomial(AdjointMatrix(y)) : y in L];
+  assert forall{ p : p in char_L | Coefficient(p, n) eq 1};
+  
+  FCl := BaseRing(Parent(x));
+  if Type(FCl) eq FldAC then
+    F := BaseRing(FCl);
+  else
+    F := FCl;
+  end if;
+  P := RingOfIntegers(F);  // This should now be a polynomial ring over the integers, ie Z[al], or Z[al,bt] etc
+  if Characteristic(P) eq 0 and not P cmpeq Integers() then
+    assert BaseRing(P) eq Integers();
+  end if;
+
+  // to be able to define ideals, we need a RngMPol not a RngUPol
+  if Type(P) notin { RngUPol, RngMPol} then
+    PM := P;
+    hom_P_PM := hom<P->P | >;  // identity map
+  elif Type(P) eq RngUPol and Rank(P) eq 1 then
+    PM<t> := PolynomialRing(BaseRing(P), 1);
+    hom_P_PM := hom<P -> PM | PM.1>;
+  else
+    PM := P;
+    hom_P_PM := hom<P -> PM | [ PM.i : i in [1..Rank(PM)]]>;
+  end if;
+
+  
+  fail := [**];
+  for i-> py in char_L do
+    print i;
+    p := py - char_x;
+    
+    if p eq 0 then
+      // we have found another class of axis!
+      Append(~fail, <L[i], py, 0>);
+      print "  Found new orbit of Monster axis.";
+      continue; // go to the next idempotent
+    end if;
+    
+    coeffs := [ q : q in Coefficients(p) | q ne 0];
+    so, cond := CanChangeUniverse(coeffs, F);
+    if so then
+      // We need to clear denominators
+      ds := LCM([ Denominator(q) : q in cond]);
+      
+      cond := [ P!(ds*cond[i]) : i in [1..#cond]]@hom_P_PM;
+      
+      if Type(PM) cmpeq RngMPol then
+        cond := GroebnerBasis(cond);
+      end if;
+      
+      I := ideal<PM | cond>;
+      
+      if I eq PM then
+        // there are no values of al, or bt, or characteristics where the idempotent has the same spectrum as x
+        continue;
+      elif Type(PM) eq RngMPol and exists{ r : r in Basis(I) | #Terms(r) eq 1 and Terms(r) eq Monomials(r)} then
+        // one of the generators for the ideal is just a power of t, but al and bt cannot be 0
+        continue;
+      else
+        print "  Fail.  Need to check.  Ideal is", I;
+        Append(~fail, <L[i], py, I>);
+      end if;
+    else
+      // check the number of eigenvalues
+      eigs := Eigenvalues(L[i]);
+      if &+[ e[2] : e in eigs] eq n and #eigs le 3 then // we have all the eigenvalues and there are less than 4
+        assert #Eigenvalues(x) eq 4;
+        continue;
+      end if;
+      
+      // Find the elements of FCl involved
+      supp := &join[ FCl_Indicator(c) : c in coeffs];
+      
+      // Clear denominators
+      Aff := AffineAlgebra(FCl);
+      coeffs_aff := ChangeUniverse(coeffs, Aff);
+      denoms := [ Denominator(t) : t in Coefficients(c), c in coeffs_aff];
+      ds := LCM(denoms);
+      coeffs_aff := [ ds*c : c in coeffs_aff];
+      
+      
+      rk := #supp + Rank(F);
+      PP := PolynomialRing(BaseRing(P), rk);
+      
+      // This is a little dangerous as we are mapping a field to a polynomial ring over a ring
+      map_F_PP := hom<F-> PP | [ PP.(rk-Rank(F)+i) : i in [1..Rank(F)]]>;
+      map_Aff_PP := hom<Aff->PP | map_F_PP, 
+      [ Aff.i in supp select PP.Position(supp, Aff.i) else PP!0 : i in [1..Rank(Aff)]]>; // Need more generators!!
+      
+      gens := coeffs_aff@map_Aff_PP;
+      
+      // now add the minimal polynomials
+      for pos-> r in supp do
+        min := MinimalPolynomial(r);
+        ds := LCM([ Denominator(c) : c in Coefficients(min)]);
+        min := ds*min;
+        map_Ft_PP := hom<Parent(min)-> PP | map_F_PP, PP.pos>;
+        Append(~gens, min@map_Ft_PP);
+      end for;
+      
+      // We can divide by 2
+      function Reduce2(r)
+        cont := Content(r);
+        fact := Factorisation(r);
+        
+        so := exists(e){ t[2] : t in fact | t[1] eq 2};
+        
+        if not so then
+          return r;
+        end if;
+        rr, rem := Quotrem(r, 2^e);
+        assert rem eq 0;
+        return rr;
+      end function;
+      
+      gens := [Reduce2(r) : r in gens];
+      while not IsGroebner(gens) do
+        gens := GroebnerBasis(gens);
+        gens := [Reduce2(r) : r in gens];
+      end while;
+
+      I := ideal<PP | gens>;
+
+      if I eq Generic(I) then
+        // there are no values of al, or bt, or characteristics where the idempotent has the same spectrum as x
+        continue;
+      else
+        print "  Fail.  Algebraic Extension.  Groebner basis is", Basis(I);
+        Append(~fail, <L[i], py, [*<r, r@map_Aff_PP> : r in supp*] cat [* <F.i, F.i@map_Aff_PP> : i in [1..Rank(F)] *], I>);
+      end if;    
+    end if;
+  end for;
+  
+  return fail;
+end function;
+
+// Given an ideal I and a polynomial poly which is not allowed,
+// reduce the generators of I by dividing by poly if possible.
+ReduceIdeal := function(I, poly)
+  P := Generic(I);
+  bas := Basis(I);
+  for i->r in bas do
+    r_new := r;
+    repeat
+      r_old := r_new;
+      so, r_new := IsDivisibleBy(r_old, poly);
+    until not so;
+    bas[i] := r_old;
+  end for;
+  
+  bas := GroebnerBasis(bas);
+  return ideal<P|bas>;
+end function;
+
+
+
+
+
+
+
+
 // Given an idempotent x and a sequence of orbits of idempotents orbs,
-// find those in L which have the same characteristic polynomial as x
+// find those in L which have the same characteristic polynomial as x over Z
 // returns any possibilities with the characteristic poly in variables which needs to be satisfied
 
 FindMatchingIdempotents := function(x, orbs)
@@ -156,7 +361,7 @@ FindMatchingIdempotents := function(x, orbs)
   P := RingOfIntegers(F);  // This should now be a polynomial ring over the integers Z[t]
   // assert BaseRing(P) eq Integers();
 
-  fail := [];
+  fail := [**];
   for i-> py in char_L do
     print i;
     p := py - char_x;
@@ -206,8 +411,8 @@ FindMatchingIdempotents := function(x, orbs)
           assert F eq BaseRing(Ft);
           assert P eq RingOfIntegers(F);
           
-          Pt := PolynomialRing(P);
-          coeffs := ChangeUniverse(coeffs,Pt);
+          Pt := PolynomialRing(P, 1);
+          coeffs := ChangeUniverse(coeffs, Pt);
           
           gcd := GCD(coeffs);
           if gcd eq 1 or (Parent(gcd) cmpeq QQ and gcd mod 2 eq 0) then

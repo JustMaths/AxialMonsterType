@@ -8,6 +8,8 @@ Code to verify properties of Monster type axial algebras with the X(5) axet
 AttachSpec("../2-gen Monster.spec");
 AttachSpec("../../AxialTools/AxialTools.spec");
 
+load "Find idempotents.m";
+
 QQ := Rationals();
 // =========================================================
 //
@@ -15,9 +17,16 @@ QQ := Rationals();
 //
 // =========================================================
 
-A, gen, frob := M5A();
+A, gens, frob := M5A();
 F<al> := BaseRing(A);
 bt := (5*al-1)/8;
+
+// Confirm the algebra is indeed a 2-generated Monster type algebra
+
+assert sub<A | gens> eq A;
+assert HasMonsterFusionLaw(gens[1]: fusion_values:=[al, bt]);
+assert HasMonsterFusionLaw(gens[2]: fusion_values:=[al, bt]);
+assert IsFrobeniusForm(frob, A);
 
 assert al-bt eq (3*al+1)/8;
 // al can't be -1/3 as then al = bt
@@ -73,7 +82,7 @@ assert Determinant(frob) eq -5^6/2^23*(al-bt)^2*(3*al-7)^5/bt;
 // Ideals for al = 7/3
 //
 // ---------------------------------------------------
-A, gen, frob := M5A(7/3);
+A, gens, frob := M5A(7/3);
 
 // The radical is 5-dimensional
 assert Dimension(NullSpace(frob)) eq 5;
@@ -106,9 +115,7 @@ assert A.1*u5 eq u2-u3-u4+u5;
 // Idempotents
 //
 //------------------------------------------
-load "Find idempotents.m";
-
-A, gen, frob := M5A();
+A, gens, frob := M5A();
 F<al> := BaseRing(A);
 bt := (5*al-1)/8;
 
@@ -421,7 +428,7 @@ assert xi(4) in B;
 al := 1/2;
 bt := (5*al-1)/8;
 
-A, gen, frob := M5A(al);
+A, gens, frob := M5A(al);
 F := QQ;
 
 t1 := MiyamotoInvolution(A.1);
@@ -511,7 +518,7 @@ assert #poss eq 0;
 al := 7/3;
 bt := (5*al-1)/8;
 
-A, gen, frob := M5A(al);
+A, gens, frob := M5A(al);
 F := QQ;
 
 I := IdempotentIdeal(A);
@@ -669,7 +676,7 @@ end for;
 
 // Theorem: IY5 and M5A are isomorphic in characteristic 5
 
-A, gen, frob := M5A(: base_ring := GF(5));
+A, gens, frob := M5A(: base_ring := GF(5));
 
 AY := V2(: base_ring := GF(5));
 
